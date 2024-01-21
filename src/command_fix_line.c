@@ -1,3 +1,15 @@
+/**
+ * =============================================================================
+ * TODO
+ * =============================================================================
+ *   - Factor out ramerDouglasPeuker
+ *   - See if ramerDouglasPeuker can be not a recursive function
+ *   - There is a suggestion here https://karthaus.nl/rdp/
+ *     to use "Shortest path" instead of perpendicularDistance but as far as
+ *     I can understand perpendicular is a shortest distance. I need to
+ *     understand the difference.
+ *   - Think about fast path for the ramerDouglasPeuker function
+ */
 #include "command_fix_line.h"
 
 #include <assert.h>
@@ -30,7 +42,6 @@ typedef struct Line {
 
 // lineAppendVertex appends vertex to the end of the line returns false if
 // line is null or line reached maximum size.
-// TODO(nk2ge5k): it seems possible to support dynamic allocation here.
 internal bool lineAppendVertex(Line *dst, Vector2 vec) {
   if (NULL == dst) {
     return false;
@@ -176,8 +187,7 @@ internal Button buttonFromText(char *text, int font_size, float x, float y,
   return button;
 }
 
-internal void buttonDraw(Button *button, Color bg, Color stroke,
-                         Color font_color) {
+internal void buttonDraw(Button *button, Color bg, Color stroke, Color font_color) {
   int spacing = button->font_size / 10;
 
   DrawRectangleRec(button->rect, bg);
@@ -215,8 +225,9 @@ internal void indiciesAppend(Indicies *dst, size_t index) {
 
 internal void indiciesClear(Indicies *dst) { dst->length = 0; }
 
-internal float perpindicularDictance(Vector2 p, Vector2 start, Vector2 end) {
+internal float perpendicularDistance(Vector2 p, Vector2 start, Vector2 end) {
   float a = p.x - start.x;
+
   float b = p.y - start.y;
   float c = end.x - start.x;
   float d = end.y - start.y;
@@ -227,25 +238,17 @@ internal float perpindicularDictance(Vector2 p, Vector2 start, Vector2 end) {
 }
 
 // Forward declaration of the function since it is a recursive function.
-// TODO(nk2ge5k): make it not recursive
 internal void ramerDouglasPeuker(Indicies *dst, Vector2 *vertices, size_t start,
                                  size_t end, float epsilon);
 
 internal void ramerDouglasPeuker(Indicies *dst, Vector2 *vertices, size_t start,
                                  size_t end, float epsilon) {
-  // TODO(nk2ge5k): here we have possibility for the fast path, for example
-  // if we have less than 3 points or something like that.
-
   float max_distance = 0; // maximum distance
   size_t index;           // index of the max distance point
 
   for (size_t i = start + 1; i < end; i++) {
-    // Find out prependicular distance from the point to the line between
-    // first and last point of the line.
-    // TODO(nk2ge5k): I need to check possabilit of the distance to be
-    // negative.
     float distance =
-        perpindicularDictance(vertices[i], vertices[start], vertices[end]);
+        perpendicularDistance(vertices[i], vertices[start], vertices[end]);
     assert(distance >= 0.0f);
     if (distance > max_distance) {
       index = i;
@@ -327,7 +330,6 @@ internal MultiLine approximateStraights(const Line *line) {
   }
 
   // Lets get "golden" angle from the first segment
-  // TODO(nk2ge5k): may be should think about better heuristic
   target_angle = radsToDegs(Vector2LineAngle(line->vertices[0], // start
                                              line->vertices[1]  // end
                                              ));
