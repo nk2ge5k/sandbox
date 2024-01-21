@@ -46,7 +46,7 @@ internal Grass__V1__Geobuf *readGeobufFromFile(const char *filename) {
   debugf("reading geobuf file %s\n", filename);
 
   size_t file_size;
-  uint8_t *geobuf_data = file_read_all_uint8(filename, &file_size);
+  uint8_t *geobuf_data = fileReadAllUtf8(filename, &file_size);
   if (geobuf_data == NULL) {
     return NULL;
   }

@@ -13,9 +13,9 @@ typedef struct BBox {
 } BBox;
 
 // Convert from decimal degrees to radians.
-double degs_to_rads(double degrees);
+double degsToRads(double degrees);
 
 // Convert from radians to decimal degrees.
-double rads_to_degs(double radians);
+double radsToDegs(double radians);
 
 #endif

@@ -9,6 +9,7 @@
 #include <raymath.h>
 
 #include "debug.h"
+#include "lnglat.h"
 #include "types.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -17,8 +18,6 @@
 
 // Maximum number of points in ring
 #define MAX_POINTS 128
-// 180 / pi
-#define M_180_PI 57.29577951308232087679815481410517033240547L
 
 #define SQR(a) (a * a)
 
@@ -273,11 +272,12 @@ internal void ramerDouglasPeuker(Indicies *dst, Vector2 *vertices, size_t start,
 internal void printAngles(const Line *line) {
   float angle;
   for (size_t i = 1; i < line->length; i++) {
-    angle = Vector2LineAngle(line->vertices[i - 1], line->vertices[i]);
-    printf("Segment #%ld angle: %Lf\n", i, angle * M_180_PI);
-    angle = Vector2LineAngle(Vector2Normalize(line->vertices[i - 1]),
-                             Vector2Normalize(line->vertices[i]));
-    printf("Segment #%ld angle(normalized): %Lf\n", i, angle * M_180_PI);
+    angle =
+        radsToDegs(Vector2LineAngle(line->vertices[i - 1], line->vertices[i]));
+    printf("Segment #%ld angle: %f\n", i, angle);
+    angle = radsToDegs(Vector2LineAngle(Vector2Normalize(line->vertices[i - 1]),
+                                        Vector2Normalize(line->vertices[i])));
+    printf("Segment #%ld angle(normalized): %f\n", i, angle);
   }
 }
 
@@ -328,16 +328,14 @@ internal MultiLine approximateStraights(const Line *line) {
 
   // Lets get "golden" angle from the first segment
   // TODO(nk2ge5k): may be should think about better heuristic
-  target_angle = Vector2LineAngle(line->vertices[0], // start
-                                  line->vertices[1]  // end
-                                  ) *
-                 M_180_PI;
+  target_angle = radsToDegs(Vector2LineAngle(line->vertices[0], // start
+                                             line->vertices[1]  // end
+                                             ));
 
   for (size_t i = 2; i < line->length; i++) {
-    current_angle = Vector2LineAngle(line->vertices[i - 1], // start
-                                     line->vertices[i]      // end
-                                     ) *
-                    M_180_PI;
+    current_angle = radsToDegs(Vector2LineAngle(line->vertices[i - 1], // start
+                                                line->vertices[i]      // end
+                                                ));
 
     diff = fabs(target_angle - current_angle);
     if (diff >= 85.0f) {

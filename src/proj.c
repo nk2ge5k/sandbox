@@ -11,13 +11,13 @@
 //
 //   // NOTE(nk2ge5k): this also works kind a...
 //   // float x_radius =
-//   //     (float)width / (2.0f * degs_to_rads(bounds->ne.lng - bounds->sw.lng));
+//   //     (float)width / (2.0f * degsToRads(bounds->ne.lng - bounds->sw.lng));
 //   // float y_radius =
-//   //     (float)height / (2.0f * degs_to_rads(bounds->ne.lat - bounds->sw.lat));
+//   //     (float)height / (2.0f * degsToRads(bounds->ne.lat - bounds->sw.lat));
 //
 //   float radius = (float)width / (2.0f * M_PI);
-//   float lng_rads = degs_to_rads(lng);
-//   float lat_rads = degs_to_rads(lat);
+//   float lng_rads = degsToRads(lng);
+//   float lat_rads = degsToRads(lat);
 //   float y_from_equator = radius * log(tan(M_PI_4 + lat_rads / 2));
 //
 //   return (Vector2){
@@ -32,8 +32,8 @@
 Vector2 projectWebMertacor(double lng, double lat /* , float zoom */) {
   // const float ratio = (1.0f / M_2_PI) * pow(2, zoom);
 
-  const float lng_rads = degs_to_rads(lng);
-  const float lat_rads = degs_to_rads(lat);
+  const float lng_rads = degsToRads(lng);
+  const float lat_rads = degsToRads(lat);
 
   return (Vector2){
       .x = (lng_rads + M_PI),
