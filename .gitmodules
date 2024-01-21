@@ -1,0 +1,6 @@
+[submodule "submodules/stb"]
+	path = submodules/stb
+	url = git@github.com:nothings/stb.git
+[submodule "submodules/protobuf-c"]
+	path = submodules/protobuf-c
+	url = git@github.com:protobuf-c/protobuf-c.git

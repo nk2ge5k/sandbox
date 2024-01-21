@@ -1,0 +1,13 @@
+CompileFlags:
+  Add:
+      - "-I/home/nk2ge5k/scratch/c/hex-display/src"
+      - "-I/usr/local/include"
+      - "-I/usr/local/include/h3"
+      - "-I/usr/include"
+      - "-I/home/nk2ge5k/src/github.com/nothings/stb"
+      - "-Wall"
+      - "-Wextra"
+      - "-L/usr/local/lib"
+      - "-lh3"
+      - "-lm"
+      - "-lraylib"
