@@ -15,13 +15,17 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <raylib.h>
 #include <raymath.h>
 
+#include "csv.h"
 #include "debug.h"
 #include "lnglat.h"
+#include "proj.h"
+#include "str.h"
 #include "types.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,7 +191,8 @@ internal Button buttonFromText(char *text, int font_size, float x, float y,
   return button;
 }
 
-internal void buttonDraw(Button *button, Color bg, Color stroke, Color font_color) {
+internal void buttonDraw(Button *button, Color bg, Color stroke,
+                         Color font_color) {
   int spacing = button->font_size / 10;
 
   DrawRectangleRec(button->rect, bg);
@@ -454,7 +459,85 @@ internal void frame() {
             "E: %.2f", epsilon);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// FILE
+////////////////////////////////////////////////////////////////////////////////
+
+Vector2 parseVector(String str) {
+  char textbuf[128];
+  // string format is (-5.727941989898682,41.27079391479492)
+  str = stringSlice(str, 1, str.len - 2);
+
+  int comma_pos = stringIndexOf(str, COMMA);
+  assert(comma_pos > 0);
+
+  stringCopy(textbuf, stringSlice(str, 0, comma_pos));
+  float lng = atof(textbuf);
+
+  stringCopy(textbuf, stringSlice(str, comma_pos + 1, str.len - comma_pos - 1));
+  float lat = atof(textbuf);
+
+  return projectWebMertacor(lng, lat);
+}
+
+// loadFromFile attempts to load line from the file
+Vector2 *loadFromFile(char *filename, size_t *length) {
+  *length = 0;
+  Vector2 *result = NULL;
+
+  FILE *file = fopen(filename, "r");
+  if (NULL == file) {
+    return result;
+  }
+
+  String content = stringMakeFromFile(file);
+  fclose(file);
+
+  // Get header line and count number of the columns in the header
+  size_t ncolumns = csvCountColumns(csvGetLine(&content), COMMA);
+  if (ncolumns == 0) {
+    goto cleanup;
+  }
+
+  // Counting lines
+  // NOTE(nk2ge5k): I am doing this after counting columns because I want
+  // to exclude header from the count.
+  size_t nlines = csvCountLines(content);
+  result = malloc(sizeof(Vector2) * nlines); // @leak
+
+  String *line = malloc(sizeof(String) * ncolumns);
+  // NOTE(nk2ge5k): Since I know which file I am parsing i wont attempt to
+  // find where is my column.
+
+  *length = 0;
+  for (size_t i = 0; !stringIsEmpty(content); i++) {
+    size_t nvalues = csvGetValues(line, ncolumns, csvGetLine(&content), COMMA);
+    if (nvalues >= 5) { // 5th column contains the point
+      // NOTE(nk2ge5k): actually there is no actual need for this check
+      // because every row have the same number of columns.
+      result[*length] = parseVector(line[4]);
+      (*length)++;
+    }
+  }
+
+cleanup:
+  stringFree(content);
+  free(line);
+
+  return result;
+}
+
 int commandFixLine(int argc, char **argv) {
+  size_t asset_size;
+  Vector2 *asset;
+
+  if (argc > 1) {
+    // TODO(nk2ge5k): draw line to the screen.
+    //  - I need to figure out how to calculate zoom and x, y offset for
+    //    bounding box which is important for the drawing geo spatial data.
+    asset = loadFromFile(argv[1], &asset_size);
+  }
+
   const int screen_width = 800;
   const int screen_height = 600;
 

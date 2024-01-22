@@ -2,6 +2,7 @@
 #define STRING_H
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stddef.h>
 
 // Format helpers for printf/sprintf... functions
@@ -29,8 +30,16 @@ typedef struct String {
 // stringMake allocates new string.
 String stringMake(size_t len);
 
-// stringMakeFrm creates new string from zero-terminated string.
+// stringMakeFrom creates new string from zero-terminated string.
 String stringMakeFrom(char *data);
+
+// stringMakeFromFile creates string that contains entire file's content.
+// Otherwise returns empty string if command failed to read file.
+String stringMakeFromFile(FILE *file);
+
+// stringCopy copies string's content into character array.
+// It probably will SEGFAULT if dst is to short.
+void stringCopy(char *dst, String src);
 
 // stringFree frees the memory space pointed by String v
 void stringFree(String str);

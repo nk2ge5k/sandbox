@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "debug.h"
+#include "file.h"
+
 String stringMake(size_t len) {
   String result = {
       .offset = 0,
@@ -32,6 +35,42 @@ String stringMakeFrom(char *data) {
   };
 
   return result;
+}
+
+String stringMakeFromFile(FILE *file) {
+  String result = {
+      .offset = 0,
+      .len = 0,
+      .v = NULL,
+  };
+
+  if (NULL == file) {
+    return result;
+  }
+
+  size_t file_size = fileSize(file);
+  if (file_size <= 0) {
+    return result;
+  }
+
+  result = stringMake(file_size);
+
+  int64_t nread = fileReadIntoString(&result, file);
+  if (nread < 0) {
+    errorf("Failed to read file\n");
+  }
+  if ((size_t)nread != file_size) {
+    errorf("Short read %ld != %ld\n", nread, file_size);
+  }
+
+  result.len = nread;
+
+  return result;
+}
+
+void stringCopy(char *dst, String src) {
+  memcpy(dst, src.v + src.offset, src.len);
+  dst[src.len] = '\0';
 }
 
 void stringFree(String str) { free(str.v); }
