@@ -4,6 +4,7 @@
  * =============================================================================
  * - May be will be good idea to define some CSV structure that will store
  *   delimeter and cursor and all other helpful things.
+ * - Allow to parse CSV from the file.
  */
 #ifndef CSV_H
 #define CSV_H
