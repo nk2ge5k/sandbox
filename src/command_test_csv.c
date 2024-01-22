@@ -38,7 +38,10 @@ int commandTestCsv(int argc, char **argv) {
 
   String header_line = csvGetLine(&content);
   size_t ncolumns = csvCountColumns(header_line, COMMA);
-  assert(ncolumns > 0);
+  if (ncolumns == 0) {
+    errorf("No columns found in the first line\n");
+    goto error;
+  }
 
   String *header = malloc(sizeof(String) * ncolumns); // @leak
   String *line = malloc(sizeof(String) * ncolumns);   // @leak
@@ -54,7 +57,6 @@ int commandTestCsv(int argc, char **argv) {
     }
   }
 
-  fclose(file);
   return 0;
 
 error:
