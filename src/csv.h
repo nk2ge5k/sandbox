@@ -27,6 +27,10 @@ String csvGetValue(String *line, char delim);
 // FIXME(nk2ge5k): this function cannot handle quoted values.
 size_t csvCountColumns(String src, char delim);
 
+// csvCountLines return number of lines in the string
+// NOTE(nk2ge5k): O(N) complexity where N = src.len
+size_t csvCountLines(String src);
+
 // csvGetValue poulates dst with maximum max values from the csv line
 // returns number of the values parsed.
 size_t csvGetValues(String *dst, size_t max, String line, char delim);

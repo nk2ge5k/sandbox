@@ -112,6 +112,27 @@ size_t csvCountColumns(String src, char delim) {
   return ncolumns;
 }
 
+size_t csvCountLines(String src) {
+  if (stringIsEmpty(src)) {
+    // No lines in the empty string
+    return 0;
+  }
+
+  int index = stringIndexOf(src, EOL);
+  if (index < 0) {
+    // No new line means that we have only one line
+    return 1;
+  }
+
+  size_t count = 1;
+  do {
+    index = stringIndexOfAfter(src, index, EOL);
+    count++;
+  } while (index >= 0);
+
+  return count;
+}
+
 size_t csvGetValues(String *dst, size_t max, String line, char delim) {
   size_t i;
   for (i = 0; i < max && !stringIsEmpty(line); i++) {

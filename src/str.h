@@ -35,8 +35,13 @@ String stringMakeFrom(char *data);
 // stringFree frees the memory space pointed by String v
 void stringFree(String str);
 
-// stringIndexOf returns index of the character ch or -1 if character not found.
+// stringIndexOf returns first index of the character ch or -1 if character
+// not found.
 int stringIndexOf(String str, char ch);
+
+// stringIndexOfAfter returns first index of the character ch after offset or 
+// -1 if character not found.
+int stringIndexOfAfter(String str, size_t offset, char ch);
 
 // stringSlice returns slice of the string.
 String stringSlice(String str, size_t start, size_t len);

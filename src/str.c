@@ -36,9 +36,18 @@ String stringMakeFrom(char *data) {
 
 void stringFree(String str) { free(str.v); }
 
-// TODO(nk2ge5k): may be should replace with int64_t?
+// TODO(nk2ge5k): may be should replace return vaule type with int64_t?
 int stringIndexOf(String str, char ch) {
   for (size_t i = 0; i < str.len; i++) {
+    if (ch == str.v[str.offset + i]) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+int stringIndexOfAfter(String str, size_t offset, char ch) {
+  for (size_t i = offset + 1; i < str.len; i++) {
     if (ch == str.v[str.offset + i]) {
       return i;
     }
