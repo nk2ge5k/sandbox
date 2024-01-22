@@ -1,7 +1,7 @@
 ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 SUBMODULES_DIR = $(ROOT_DIR)/submodules
 
-CFLAGS  = -Wall -Wextra -ggdb \
+CFLAGS  = -Wall -Wextra -Wno-unused -ggdb \
 					-I./src \
 					-I/usr/include \
 					-I/usr/local/include \
@@ -18,10 +18,14 @@ BUILD := $(ROOT_DIR)/build/sandbox
 
 $(BUILD):
 	@mkdir -p $(ROOT_DIR)/build
-	$(CC) $(CFLAGS) $(SOURCES) $(PROTO_SOURCES) -o build/play $(LDFLAGS)
+	@$(CC) $(CFLAGS) $(SOURCES) $(PROTO_SOURCES) -o build/sandbox $(LDFLAGS)
 
 build: $(BUILD) ## Build binary
 .PHONY: build
+
+clean: ## Clean project
+	rm -rf $(ROOT_DIR)/build
+.PHONY: clean
 
 help: ## Show this help
 	@echo "\nSpecify a command. The choices are:\n"

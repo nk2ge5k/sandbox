@@ -9,37 +9,31 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-size_t fileSizeFromFd(const int fd) {
-  struct stat statbuf;
-  if (fstat(fd, &statbuf) == -1) {
-    return 0;
-  }
-  return statbuf.st_size;
-}
+int64_t fileSize(FILE *file) {
+  int64_t size = -1;
+  int64_t cur = ftell(file); // saving current position
 
-size_t fileSize(const char *filename) {
-  int fd = open(filename, O_RDONLY);
-  if (fd == -1) {
-    return 0;
+  if (fseek(file, 0, SEEK_END) < 0) {
+    goto finish;
   }
 
-  size_t size = fileSizeFromFd(fd);
-  close(fd);
+  if ((size = ftell(file)) < 0) {
+    goto finish;
+  }
 
+finish:
+  // NOTE(nk2ge5k): no error cheking because i do not understand how to
+  // handle this error if any other error occured.
+  fseek(file, cur, SEEK_SET);
   return size;
 }
 
-size_t fileReadInto(void *dst, FILE *file, const size_t length) {
+int64_t fileReadInto(void *dst, size_t length, FILE *file) {
   size_t nread = 0;
-  size_t n;
 
   while (nread < length) {
-    n = fread(dst + nread, 1, length - nread, file);
+    size_t n = fread(dst + nread, 1, length - nread, file);
     if (n == 0) {
-      if (ferror(file)) {
-        fprintf(stderr, "[ERROR]: failed to read file\n");
-        return 0;
-      }
       break;
     }
     nread += n;
@@ -48,42 +42,7 @@ size_t fileReadInto(void *dst, FILE *file, const size_t length) {
   return nread;
 }
 
-uint8_t *fileReadAllUtf8(const char *filename, size_t *size) {
-  size_t fsize = fileSize(filename);
-  uint8_t *data = malloc(fsize + 1);
-  memset(data, 0, fsize + 1);
-
-  FILE *file = fopen(filename, "r");
-  if (file == NULL) {
-    fprintf(stderr, "[ERROR]: failed to open the file %s: %s\n", filename,
-            strerror(errno));
-    return NULL;
-  }
-
-  ssize_t nread = fileReadInto(data, file, fsize);
-  if (nread < 0) {
-    fprintf(stderr, "[ERROR]: Failed to read file %s: %s\n", filename,
-            strerror(errno));
-    goto error;
-  }
-
-  if ((size_t)nread != fsize) {
-    fprintf(stderr, "[ERROR]: Short-read: %ld != %lu\n", nread, fsize);
-    goto error;
-  }
-
-  // NOTE(nk2ge5k): zero-terminated string
-  if (size != NULL) {
-    *size = nread;
-  }
-
-  fclose(file);
-  return data;
-
-error:
-  fprintf(stderr, "[EROR]: failed to read the file %s\n", filename);
-
-  fclose(file);
-  free(data);
-  return NULL;
+int64_t fileReadIntoString(String *dst, FILE *file) {
+  int64_t nread = fileReadInto(dst->v, dst->len, file);
+  return nread;
 }

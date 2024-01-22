@@ -3,13 +3,23 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
-// fileSize returns file size.
-// TODO(nk2ge5k): returns 0 if any error encountered, and its kinda missleading.
-size_t fileSize(const char *filename);
+#include "str.h"
 
-// file_read_all reads entire file and returns its contents as zero-terminated
-// string.
-uint8_t *fileReadAllUtf8(const char *filename, size_t *size);
+// fileSize returns file size. Otherwise, -1 is returned and errno is set
+// to indicate the error.
+int64_t fileSize(FILE *file);
+
+// fileReadInto reads entire file into dst, returns number of bytes read from
+// file. Otherwise, -1 is returned and errno is set to indicate the error.
+int64_t fileReadInto(void *dst, size_t length, FILE *file);
+
+// fileReadInto reads entire file into dst string, returns number of bytes
+// read from file. Otherwise, -1 is returned and errno is set to indicate the
+// error.
+// NOTE(nk2ge5k): function wont modify length of the dst string in case of the
+// short write.
+int64_t fileReadIntoString(String *dst, FILE *file);
 
 #endif

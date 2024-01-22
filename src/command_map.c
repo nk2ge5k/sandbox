@@ -45,25 +45,39 @@
 internal Grass__V1__Geobuf *readGeobufFromFile(const char *filename) {
   debugf("reading geobuf file %s\n", filename);
 
-  size_t file_size;
-  uint8_t *geobuf_data = fileReadAllUtf8(filename, &file_size);
-  if (geobuf_data == NULL) {
-    return NULL;
+  FILE *file = fopen(filename, "r");
+  if (NULL == file) {
+    errorf("Failed to open file %s: %s\n", filename, STD_ERROR);
+    goto file_error;
   }
 
-  debugf("[DEBUG]: File size after read is %lu\n", file_size);
+  int64_t file_size = fileSize(file);
+  if (file_size < 0) {
+    errorf("Failed to get file size of file %s\n", filename);
+    goto file_error;
+  }
 
-  Grass__V1__Geobuf *geobuf =
-      grass__v1__geobuf__unpack(NULL, file_size, geobuf_data);
-  if (geobuf == NULL) {
-    debugf("[ERROR]: Failed to unpack geobuf\n");
+  uint8_t *geobuf_data = malloc(sizeof(uint8_t) * file_size + 1);
+  memset(geobuf_data, 0, file_size + 1);
+
+  int64_t read = fileReadInto(geobuf_data, file_size, file);
+  if (read != file_size) {
+    errorf("Short read %ld != %ld\n", read, file_size);
+    goto error;
+  }
+
+  Grass__V1__Geobuf *geobuf = grass__v1__geobuf__unpack(NULL, file_size, geobuf_data);
+  if (NULL == geobuf) {
+    errorf("Failed to unpack geobuf\n");
     goto error;
   }
 
   free(geobuf_data);
   return geobuf;
-error:
+error:      // Late errors after allocatiing geobuf_data struct
   free(geobuf_data);
+file_error: // Early errors after opening file
+  fclose(file);
   return NULL;
 }
 

@@ -6,4 +6,7 @@
 /** 180 / pi */
 #define M_180_PI 57.29577951308232087679815481410517033240547L
 
+// End of the line
+#define EOL '\n'
+
 #endif
