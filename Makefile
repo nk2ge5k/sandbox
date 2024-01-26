@@ -9,6 +9,10 @@ PROTO_SOURCES = $(wildcard $(ROOT_DIR)/src/proto/*.pb-c.c)
 
 BUILD := $(ROOT_DIR)/build/sandbox
 
+space :=
+space +=
+join-with = $(subst $(space),$1,$(strip $2))
+
 $(BUILD):
 	@mkdir -p $(ROOT_DIR)/build
 	$(CC) -DDEBUG=1 -DSTB_DS_IMPLEMENTATION \
@@ -20,6 +24,15 @@ build: $(BUILD) ## Build binary
 clean: ## Clean project
 	rm -rf $(ROOT_DIR)/build
 .PHONY: clean
+
+COMPILE_FLAGS := $(ROOT_DIR)/compile_flags.txt
+
+$(COMPILE_FLAGS):
+	@echo $(call join-with,"\n",$(LIBS)) > $(COMPILE_FLAGS)
+
+# TODO(nk2ge5k): could i manage with ctags or something like that?
+dump-commands: $(COMPILE_FLAGS) # Writes compile_flags.txt for clangd lsp
+.PHONY: dump-commands
 
 help: ## Show this help
 	@echo "\nSpecify a command. The choices are:\n"
