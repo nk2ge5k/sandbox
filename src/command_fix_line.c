@@ -150,7 +150,7 @@ void drawTextf(int x, int y, int font_size, Color color, const char *format,
   {
     va_list argptr;
     va_start(argptr, format);
-    vsprintf(buf, format, argptr);
+    vsnprintf(buf, 1024, format, argptr);
     va_end(argptr);
   }
 
@@ -496,7 +496,8 @@ Vector2 *loadFromFile(char *filename, size_t *length) {
   // Get header line and count number of the columns in the header
   size_t ncolumns = csvCountColumns(csvGetLine(&content), COMMA);
   if (ncolumns == 0) {
-    goto cleanup;
+    stringFree(content);
+    return result;
   }
 
   // Counting lines

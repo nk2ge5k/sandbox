@@ -9,7 +9,6 @@
 #include <raylib.h>
 #include <raymath.h>
 
-#define DEBUG
 #include "debug.h"
 #include "poly.h"
 #include "types.h"

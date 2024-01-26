@@ -1,16 +1,9 @@
 ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 SUBMODULES_DIR = $(ROOT_DIR)/submodules
 
-CFLAGS  = -Wall -Wextra -Wno-unused -ggdb \
-					-I./src \
-					-I/usr/include \
-					-I/usr/local/include \
-					-I$(SUBMODULES_DIR) \
-					-I$(SUBMODULES_DIR)/stb \
-					-fsanitize=address -static-libasan
-
-LDFLAGS = -L/usr/local/lib -lm -lraylib -lprotobuf-c
-
+LIBS = -I./src -I$(SUBMODULES_DIR)/stb $(shell pkg-config --cflags raylib libprotobuf-c)
+CFLAGS  = -Wall -Wextra -Wno-unused -Wno-unused-parameter -ggdb -fsanitize=address -static-libsan
+LDFLAGS = -L/usr/local/lib -lm $(shell pkg-config --libs raylib libprotobuf-c)
 SOURCES = $(wildcard $(ROOT_DIR)/src/*.c)
 PROTO_SOURCES = $(wildcard $(ROOT_DIR)/src/proto/*.pb-c.c)
 
@@ -18,7 +11,8 @@ BUILD := $(ROOT_DIR)/build/sandbox
 
 $(BUILD):
 	@mkdir -p $(ROOT_DIR)/build
-	@$(CC) $(CFLAGS) $(SOURCES) $(PROTO_SOURCES) -o build/sandbox $(LDFLAGS)
+	$(CC) -DDEBUG=1 -DSTB_DS_IMPLEMENTATION \
+		$(LIBS) $(CFLAGS) $(SOURCES) $(PROTO_SOURCES) -o build/sandbox $(LDFLAGS)
 
 build: $(BUILD) ## Build binary
 .PHONY: build

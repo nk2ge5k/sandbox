@@ -7,7 +7,7 @@
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define put_prefix_(dst) fprintf(dst, "[%s:%d]: ", __FILENAME__, __LINE__)
 
-#ifndef DEBUG
+#if !DEBUG
 
 #define debugf(format, ...)                                                    \
   do {                                                                         \

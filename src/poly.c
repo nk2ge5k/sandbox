@@ -4,7 +4,6 @@
 #include <raymath.h>
 #include <stdlib.h>
 
-#define DEBUG
 #include "debug.h"
 
 static void triangulate(Polygon *polgyon);

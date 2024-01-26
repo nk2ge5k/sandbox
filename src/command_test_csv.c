@@ -32,7 +32,7 @@ int commandTestCsv(int argc, char **argv) {
     errorf("Failed to read file\n");
     goto error;
   } else if (nread != file_size) {
-    errorf("Short read %ld != %ld\n", nread, file_size);
+    errorf("Short read %lld != %lld\n", nread, file_size);
     goto error;
   }
 

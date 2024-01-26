@@ -23,11 +23,8 @@
 
 #include <raylib.h>
 #include <raymath.h>
-
-#define STB_DS_IMPLEMENTATION
 #include <stb_ds.h>
 
-#define DEBUG
 #include "debug.h"
 #include "file.h"
 #include "lnglat.h"
@@ -62,7 +59,7 @@ internal Grass__V1__Geobuf *readGeobufFromFile(const char *filename) {
 
   int64_t read = fileReadInto(geobuf_data, file_size, file);
   if (read != file_size) {
-    errorf("Short read %ld != %ld\n", read, file_size);
+    errorf("Short read %lld != %lld\n", read, file_size);
     goto error;
   }
 

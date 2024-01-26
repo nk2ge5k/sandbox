@@ -60,7 +60,7 @@ String stringMakeFromFile(FILE *file) {
     errorf("Failed to read file\n");
   }
   if ((size_t)nread != file_size) {
-    errorf("Short read %ld != %ld\n", nread, file_size);
+    errorf("Short read %lld != %ld\n", nread, file_size);
   }
 
   result.len = nread;
