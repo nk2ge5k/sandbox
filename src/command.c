@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "command_client.h"
 #include "command_fix_line.h"
 #include "command_map.h"
+#include "command_server.h"
 #include "command_test_csv.h"
 #include "command_triangulate.h"
 #include "types.h"
@@ -57,6 +59,18 @@ int main(int argc, char **argv) {
                          "Douglas-Pekuer simplifiction algorithm with "
                          "different epsilon values.",
           .handler = commandFixLine,
+      },
+      {
+          .hidden = false,
+          .name = "server",
+          .description = "simple server",
+          .handler = commandServer,
+      },
+      {
+          .hidden = false,
+          .name = "client",
+          .description = "simple client",
+          .handler = commandClient,
       },
       {
           .hidden = true,
