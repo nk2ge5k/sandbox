@@ -44,9 +44,6 @@ Request httpParseRequest(String data) {
     headers.len += header.len + eol.len;
     nheaders++;
   }
-  if (nheaders != 0) {
-    headers.len -= eol.len;
-  }
 
   request.headers_len = nheaders;
   request.headers = headers;
