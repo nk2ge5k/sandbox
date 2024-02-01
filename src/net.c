@@ -76,11 +76,13 @@ int netTCPDial(char *host, uint16_t port) {
     }
 
     if (connect(sock, p->ai_addr, p->ai_addrlen) == 0) {
+      freeaddrinfo(servinfo);
       return sock;
     }
 
     close(sock);
   }
 
+  freeaddrinfo(servinfo);
   return -1;
 }

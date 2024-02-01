@@ -21,6 +21,11 @@ typedef struct Request {
   String body;
 } Request;
 
+// httpParseAttempts to parse string as http request.
+// TODO(nk2ge5k): return error somehow.
 Request httpParseRequest(String data);
+
+// httpRequetPrintln prints request data into stderr
+void httpRequetPrint(Request req);
 
 #endif

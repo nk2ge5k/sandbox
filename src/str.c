@@ -163,7 +163,8 @@ String stringSliceAt(String str, size_t at) {
 }
 
 String stringSlice(String str, size_t start, size_t len) {
-  assert(start < str.len);
+  assertf(start <= str.len, "String{.offfset = %ld, .len = %ld} %ld <= %ld\n",
+          str.offset, str.len, start, str.len);
 
   String result = {
       .offset = str.offset + start,
@@ -174,8 +175,15 @@ String stringSlice(String str, size_t start, size_t len) {
   return result;
 }
 
+String stringTrimPrefix(String str, String prefix) {
+  if (stringHasPrefix(str, prefix)) {
+    return stringSlice(str, prefix.len, str.len - prefix.len);
+  }
+  return str;
+}
+
 char stringCharAt(String str, size_t index) {
-  assert(index < str.len);
+  assertf(index < str.len, "%ld < %ld\n", index, str.len);
   return str.v[str.offset + index];
 }
 

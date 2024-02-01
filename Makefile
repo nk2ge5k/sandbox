@@ -2,12 +2,20 @@ ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 SUBMODULES_DIR = $(ROOT_DIR)/submodules
 
 LIBS = -I./src -I$(SUBMODULES_DIR)/stb $(shell pkg-config --cflags raylib libprotobuf-c)
-CFLAGS  = -Wall -Wextra -Wno-unused -Wno-unused-parameter -ggdb -fsanitize=address -static-libsan
+CFLAGS  = -Wall -Wextra -Wno-unused -Wno-unused-parameter 
 LDFLAGS = -L/usr/local/lib -lm $(shell pkg-config --libs raylib libprotobuf-c)
 SOURCES = $(wildcard $(ROOT_DIR)/src/*.c)
 PROTO_SOURCES = $(wildcard $(ROOT_DIR)/src/proto/*.pb-c.c)
 
 BUILD := $(ROOT_DIR)/build/sandbox
+
+OS = $(shell uname -s)
+ifeq ($(OS),Linux)
+	OPTS ?= -ggdb -fsanitize=address -static-libasan
+endif
+ifeq ($(OS),Darwin)
+	OPTS ?= -fsanitize=address -static-libsan
+endif
 
 space :=
 space +=
@@ -16,7 +24,7 @@ join-with = $(subst $(space),$1,$(strip $2))
 $(BUILD):
 	@mkdir -p $(ROOT_DIR)/build
 	$(CC) -DDEBUG=1 -DSTB_DS_IMPLEMENTATION \
-		$(LIBS) $(CFLAGS) $(SOURCES) $(PROTO_SOURCES) -o build/sandbox $(LDFLAGS)
+		$(LIBS) $(CFLAGS) $(OPTS) $(SOURCES) $(PROTO_SOURCES) -o build/sandbox $(LDFLAGS)
 
 build: $(BUILD) ## Build binary
 .PHONY: build

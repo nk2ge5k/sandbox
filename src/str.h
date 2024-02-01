@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#define STR(data) stringMakeFrom(data)
+
 // Format helpers for printf/sprintf... functions
 #define PRSTR "%.*s"
 #define PRSTR_RPAD(N) "%-" #N ".*s"
@@ -74,6 +76,10 @@ char stringCharAt(String str, size_t index);
 
 // stringIsEmpty checks if string is empty.
 bool stringIsEmpty(String str);
+
+// stringTrimPrefix removes prefix from the string if string starts from
+// given prefix otherwise does nothing and returns original string
+String stringTrimPrefix(String str, String prefix);
 
 void stringPrintln(String str);
 

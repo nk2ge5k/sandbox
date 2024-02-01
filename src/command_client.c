@@ -5,6 +5,8 @@
 
 #include "debug.h"
 #include "net.h"
+#include "str.h"
+#include "http.h"
 
 int commandClient(int argc, char **argv) {
   int client_socket = netTCPDial("localhost", 8080);
@@ -12,8 +14,6 @@ int commandClient(int argc, char **argv) {
     errorf("dial failed\n");
     return 1;
   }
-
-  debugf("Client socket: %d\n", client_socket);
 
   char *payload = "GET /hello HTTP/1.1\r\n";
 
