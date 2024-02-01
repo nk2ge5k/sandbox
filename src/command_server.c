@@ -2,14 +2,7 @@
 
 #include "command_server.h"
 
-#include <assert.h>
-#include <errno.h>
 #include <netinet/in.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #include "debug.h"
@@ -43,14 +36,9 @@ int commandServer(int argc, char **argv) {
     String str = stringMakeFromLen(buffer, nread);
     Request request = httpParseRequest(str);
 
-    debugf("Protocol: " PRSTR "\n", STRING_FMT(request.proto));
-    debugf("Method:   " PRSTR "\n", STRING_FMT(request.method));
-    debugf("Path:     " PRSTR "\n", STRING_FMT(request.path));
-    debugf("Headers: (%lu)\n" PRSTR "\n", request.headers_len,
-           STRING_FMT(request.headers));
-    debugf("Body:\n" PRSTR "\n", STRING_FMT(request.body));
+    httpRequetPrint(request);
 
-    char *response = "HTTP/1.1 200 OK\n";
+    char *response = "HTTP/1.1 200 OK\r\n";
     send(client_socket, response, strlen(response), 0);
 
   cleanup:
