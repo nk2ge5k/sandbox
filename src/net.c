@@ -1,5 +1,6 @@
 #include "net.h"
 
+#include <netdb.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -52,4 +53,34 @@ int netAcceptConnection(int server_socket) {
     }
     return in;
   }
+}
+
+int netTCPDial(char *host, uint16_t port) {
+  char portstr[6] = {0};
+  struct addrinfo hints, *servinfo, *p;
+
+  snprintf(portstr, 5, "%d", port);
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+
+  if (getaddrinfo(host, portstr, &hints, &servinfo) != 0) {
+    return -1;
+  }
+
+  for (p = servinfo; p != NULL; p = p->ai_next) {
+    int sock;
+    if ((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+      continue;
+    }
+
+    if (connect(sock, p->ai_addr, p->ai_addrlen) == 0) {
+      return sock;
+    }
+
+    close(sock);
+  }
+
+  return -1;
 }

@@ -19,9 +19,6 @@
 
 #define BUFSIZE 1024
 
-
-
-
 int commandServer(int argc, char **argv) {
   int server_socket = netTCPListen(8080);
   if (server_socket == -1) {
