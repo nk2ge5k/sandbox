@@ -12,13 +12,16 @@
 #include "debug.h"
 #include "poly.h"
 #include "types.h"
+#include "ui/text.h"
 
 // Maximum number of points in ring
 #define MAX_POINTS 128
 // Ring points
-Vector2 ring[MAX_POINTS];
+global Vector2 ring[MAX_POINTS];
 // Current ring length
-size_t ring_length = 0;
+global size_t ring_length = 0;
+
+global bool triangulating;
 
 // isClosed checks if ring is closed - first point is the same as last one.
 internal bool isClosed() {
@@ -41,10 +44,16 @@ internal void addPoint(Vector2 point) {
     ring_length = 0;
   }
 
+  if (ring_length >= 2 && isVerticiesCloseBy(point, ring[0])) {
+    ring[ring_length] = ring[0];
+    ring_length++;
+
+    return;
+  }
+
   for (size_t i = 0; i < ring_length; i++) {
     if (isVerticiesCloseBy(point, ring[i])) {
-      point = ring[i];
-      break;
+      return;
     }
   }
 
@@ -55,9 +64,11 @@ internal void addPoint(Vector2 point) {
 internal void frame() {
   ClearBackground(RAYWHITE);
 
-  if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-    addPoint(GetMousePosition());
-  }
+  drawTextf(10,    // x
+            10,    // y
+            20,    // font size
+            BLACK, // color
+            "N: %llu", ring_length);
 
   if (isClosed()) {
     Polygon polygon = createPolygon(ring, ring_length - 1);
@@ -81,6 +92,10 @@ int commandTriangulate(int argc, char **argv) {
   SetTargetFPS(30);
 
   while (!WindowShouldClose()) {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+      addPoint(GetMousePosition());
+    }
+
     BeginDrawing();
     frame();
     EndDrawing();

@@ -27,6 +27,8 @@
 #include "proj.h"
 #include "str.h"
 #include "types.h"
+#include "ui/button.h"
+#include "ui/text.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 /// LINE
@@ -139,80 +141,6 @@ internal void multilineDraw(const MultiLine *mline, float thick, Color color) {
 }
 
 internal void multilineClear(MultiLine *mline) { mline->length = 0; }
-
-////////////////////////////////////////////////////////////////////////////////
-/// UTILS
-////////////////////////////////////////////////////////////////////////////////
-
-void drawTextf(int x, int y, int font_size, Color color, const char *format,
-               ...) {
-  static char buf[1024];
-  {
-    va_list argptr;
-    va_start(argptr, format);
-    vsnprintf(buf, 1024, format, argptr);
-    va_end(argptr);
-  }
-
-  DrawText(buf, x, y, font_size, color);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/// BUTTON
-////////////////////////////////////////////////////////////////////////////////
-
-typedef struct Button {
-  char *text;
-  int font_size;
-  float padding;
-  Rectangle rect;
-} Button;
-
-// buttonFromText creates new button from the text.
-internal Button buttonFromText(char *text, int font_size, float x, float y,
-                               float padding) {
-  int spacing = font_size / 10;
-
-  Vector2 size = MeasureTextEx(GetFontDefault(), text, font_size, spacing);
-
-  Button button = {
-      .text = text,
-      .font_size = font_size,
-      .padding = padding,
-      .rect =
-          {
-              .x = x,
-              .y = y,
-              .width = size.x + (padding * 2),
-              .height = size.y + (padding * 2),
-          },
-  };
-
-  return button;
-}
-
-internal void buttonDraw(Button *button, Color bg, Color stroke,
-                         Color font_color) {
-  int spacing = button->font_size / 10;
-
-  DrawRectangleRec(button->rect, bg);
-  DrawTextEx(GetFontDefault(), // font
-             button->text,     // text
-             (Vector2){
-                 .x = button->rect.x + button->padding,
-                 .y = button->rect.y + button->padding,
-             },                 // position
-             button->font_size, // font size
-             spacing,           // spacing
-             font_color         // color
-  );
-
-  DrawRectangleLinesEx(button->rect, 2, stroke);
-}
-
-internal bool buttonCheckCollisionVec(Button *button, Vector2 vec) {
-  return CheckCollisionPointRec(vec, button->rect);
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Ramer–Douglas–Peucker algorithm
@@ -390,8 +318,8 @@ internal void frame() {
   ClearBackground(RAYWHITE);
 
   Vector2 cursor = GetMousePosition();
-  bool is_over_run = buttonCheckCollisionVec(&button_run, cursor);
-  bool is_over_clear = buttonCheckCollisionVec(&button_clear, cursor);
+  bool is_over_run = buttonIsCollidedV(&button_run, cursor);
+  bool is_over_clear = buttonIsCollidedV(&button_clear, cursor);
 
   if (IsKeyDown(KEY_I)) {
     epsilon += 0.01;
@@ -545,13 +473,15 @@ int commandFixLine(int argc, char **argv) {
   InitWindow(screen_width, screen_height, "Drawing lines");
   SetTargetFPS(30);
 
-  button_run = buttonFromText("RUN", 30, 10, 10, 10);
+  button_run = buttonFromText("RUN", 30, (Vector2){.x = 10, .y = 10}, 10);
   button_clear =
       buttonFromText("CLEAR",
                      30, // font size
-                     button_run.rect.x + button_run.rect.width + 10, // x
-                     10,                                             // y
-                     10                                              // padding
+                     (Vector2){
+                         .x = button_run.rect.x + button_run.rect.width + 10,
+                         .y = 10,
+                     },
+                     10 // padding
       );
 
   while (!WindowShouldClose()) {
