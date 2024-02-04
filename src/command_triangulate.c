@@ -44,16 +44,21 @@ internal void addPoint(Vector2 point) {
     ring_length = 0;
   }
 
-  if (ring_length >= 2 && isVerticiesCloseBy(point, ring[0])) {
-    ring[ring_length] = ring[0];
-    ring_length++;
+  // if (ring_length >= 2 && isVerticiesCloseBy(point, ring[0])) {
+  //   ring[ring_length] = ring[0];
+  //   ring_length++;
+  //
+  //   return;
+  // }
 
-    return;
-  }
-
+  // Searching for point that close by, if such point exists then assing
+  // same coordinates to the current point.
+  // This helps with closing polygon as well as with simulating broken
+  // polygon.
   for (size_t i = 0; i < ring_length; i++) {
     if (isVerticiesCloseBy(point, ring[i])) {
-      return;
+      point = ring[i];
+      break;
     }
   }
 

@@ -5,8 +5,9 @@
 #include <stdlib.h>
 
 #include "debug.h"
+#include "types.h"
 
-static void triangulate(Polygon *polgyon);
+internal void triangulate(Polygon *polgyon);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// API
@@ -68,7 +69,7 @@ typedef struct Node {
 } Node;
 
 // createNode allocates new node of the linked list with values zeroed out.
-static Node *createNode() {
+internal Node *createNode() {
   Node *node = malloc(sizeof(struct Node));
 
   node->idx = 0; // NOTE(nk2ge5k): not perfect because it is a valid index
@@ -83,7 +84,7 @@ static Node *createNode() {
 // TODO(nk2ge5k): it is probably worth to allocate some sort of freelist
 // beforehand, but may be not. I should think about that and measure some
 // things
-static void freeNode(Node *node) {
+internal void freeNode(Node *node) {
   node->prev = NULL;
   node->next = NULL;
   node->vertex = NULL;
@@ -93,7 +94,7 @@ static void freeNode(Node *node) {
 }
 
 // freeList frees the list and all of its nodes.
-static void freeList(Node *root) {
+internal void freeList(Node *root) {
   if (root == NULL) {
     return;
   }
@@ -133,7 +134,7 @@ static void freeList(Node *root) {
 }
 
 // removeNode removes node from the linked list and frees
-static void removeNode(Node *node) {
+internal void removeNode(Node *node) {
   node->prev->next = node->next;
   node->next->prev = node->prev;
 
@@ -141,7 +142,7 @@ static void removeNode(Node *node) {
 }
 
 // swapNodes swaps two pointers to the lit nodes
-static void swapNodes(Node **l, Node **r) {
+internal void swapNodes(Node **l, Node **r) {
   struct Node *tmp;
 
   tmp = *l;
@@ -166,19 +167,19 @@ bool pointInTriangle(const Vector2 *a, const Vector2 *b, const Vector2 *c,
 // area < 0 - triangle oriented in clockwise direction
 // area = 0 - triangle is collinear
 // area > 0 - triangle oriented in counterclockwise direction
-static float areaOfTriangle(const Vector2 *a, const Vector2 *b,
-                            const Vector2 *c) {
+internal float areaOfTriangle(const Vector2 *a, const Vector2 *b,
+                              const Vector2 *c) {
   return (b->y - a->y) * (c->x - b->x) - (b->x - a->x) * (c->y - b->y);
 }
 
 // Sign returns a sign of the floating point value.
-static int32_t sign(float val) { return (0.0f < val) - (val < 0.0f); }
+internal int32_t sign(float val) { return (0.0f < val) - (val < 0.0f); }
 
 // polygonSign determines sign of the polygon
 // sign < 0 - polygon oriented in clockwise direction
 // sign = 0 - polygon is collinear
 // sign > 0 - polygon oriented in counterclockwise direction
-static int32_t polygonSign(struct Node *root) {
+internal int32_t polygonSign(struct Node *root) {
   float area = 0;
   struct Node *node;
 
@@ -196,7 +197,7 @@ static int32_t polygonSign(struct Node *root) {
 /// Eartipping
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool isEar(Node *node, int32_t polygon_direction) {
+internal bool isEar(Node *node, int32_t polygon_direction) {
   Node *a = node->prev;
   Node *b = node;
   Node *c = node->next;
@@ -221,11 +222,42 @@ static bool isEar(Node *node, int32_t polygon_direction) {
   return true;
 }
 
+internal Node* filterPoints(Node *root) {
+  Node *end = root;
+  Node *cur = root;
+  Node *next;
+  Node *prev;
+
+  do {
+    // Assuming that I did not start from the list with one element
+    next = cur->next;
+    prev = cur->prev;
+    bool same = (next->vertex->x == cur->vertex->x) &&
+                (next->vertex->y == cur->vertex->y);
+
+    if (same || areaOfTriangle(prev->vertex, cur->vertex, next->vertex) == 0) {
+      removeNode(cur);
+      end = prev;
+      cur = prev;
+
+      if (cur == cur->next) {
+        break;
+      }
+      continue;
+    } else {
+      cur = next;
+    }
+
+  } while (cur != end);
+
+  return end;
+}
+
 // triangulate fills polygon with triangles using eartiping algorithm
 // TODO(nk2ge5k): research different trianglulation algorithms or improve
 // this one, for now it works, but it seems slow and probably not entierly
 // correct.
-static void triangulate(Polygon *polygon) {
+internal void triangulate(Polygon *polygon) {
   // TODO(nk2ge5k): always allocates more size then necessary
   polygon->triangles = malloc(sizeof(size_t) * polygon->vertices_size * 3);
 
@@ -257,14 +289,15 @@ static void triangulate(Polygon *polygon) {
     list_len++;
   }
 
+  Node *stop = root;
   prev->next = root;
   root->prev = prev;
 
+  bool filtered = false;
+
   int32_t poly_sign = polygonSign(root);
 
-  cur = root;
-  while (niterations < polygon->vertices_size * 3 && list_len >= 3 &&
-         cur->next != cur->prev) {
+  for (cur = root; cur->next != cur->prev; niterations++) {
     a = cur->prev;
     b = cur;
     c = cur->next;
@@ -276,17 +309,32 @@ static void triangulate(Polygon *polygon) {
 
       ntriangles += 3;
 
-      prev = cur;
-      cur = prev->next;
+      prev = cur; // prev is used as temporary
+      cur = prev->next->next;
 
       removeNode(prev);
+      stop = cur;
 
       list_len--;
-    } else {
-      cur = cur->next;
+
+      continue;
     }
 
-    niterations++;
+    cur = cur->next;
+
+    if (cur == stop) {
+      if (filtered) {
+        // If points already filtered then just exit loop
+        // TODO(nk2ge5k): this wont allow to fill self intersecting polygons 
+        // and polygons that share points that are not close by.
+        break;
+      }
+      // filter collinear and duplicating points - they should be filled
+      // automatically triangles formed from surrounding vertices.
+      cur = filterPoints(cur);
+      stop = cur;
+      filtered = true;
+    }
   }
 
   debugf("===========================\n");
