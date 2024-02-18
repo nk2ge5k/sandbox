@@ -18,11 +18,17 @@
 
 #if !DEBUG
 
-#define debugf(format, ...)
+#define debugf(format, ...)                                                    \
+  do {                                                                         \
+  } while (0)
 
-#define assertf(expression, format, ...)
+#define assertf(expression, format, ...)                                       \
+  do {                                                                         \
+  } while (0)
 
 #else
+
+#include <stdlib.h>
 
 #define debugf(format, ...)                                                    \
   do {                                                                         \

@@ -24,7 +24,6 @@
 #include "csv.h"
 #include "debug.h"
 #include "lnglat.h"
-#include "proj.h"
 #include "str.h"
 #include "types.h"
 #include "ui/button.h"
@@ -405,7 +404,10 @@ Vector2 parseVector(String str) {
   stringCopy(textbuf, stringSlice(str, comma_pos + 1, str.len - comma_pos - 1));
   float lat = atof(textbuf);
 
-  return projectWebMertacor(lng, lat);
+  return projPseudoMercator((LngLat){
+      .lng = lng,
+      .lat = lat,
+  });
 }
 
 // loadFromFile attempts to load line from the file

@@ -23,10 +23,17 @@ join-with = $(subst $(space),$1,$(strip $2))
 $(BUILD):
 	@mkdir -p $(ROOT_DIR)/build
 	$(CC) -DDEBUG=1 -DSTB_DS_IMPLEMENTATION \
-		$(LIBS) $(CFLAGS) $(OPTS) $(SOURCES) -o build/sandbox $(LDFLAGS)
+		$(LIBS) $(CFLAGS) $(OPTS) main.c $(SOURCES) -o build/sandbox $(LDFLAGS)
 
 build: $(BUILD) ## Build binary
 .PHONY: build
+
+test: ## Run tests
+	@mkdir -p $(ROOT_DIR)/build
+	@$(CC) -DDEBUG=1 -DTEST_BUILD=1 -DSTB_DS_IMPLEMENTATION \
+		$(LIBS) $(CFLAGS) $(OPTS) test.c $(SOURCES) -o build/sandbox.test $(LDFLAGS)
+	@./build/sandbox.test
+.PHONY: test
 
 clean: ## Clean project
 	rm -rf $(ROOT_DIR)/build
@@ -34,8 +41,10 @@ clean: ## Clean project
 
 COMPILE_FLAGS := $(ROOT_DIR)/compile_flags.txt
 
-$(COMPILE_FLAGS):
-	@echo $(call join-with,"\n",$(LIBS)) > $(COMPILE_FLAGS)
+LSP_FLAGS := -DDEBUG=1 -DTEST_BUILD=1 -DSTB_DS_IMPLEMENTATION
+$(COMPILE_FLAGS): 
+	@echo $(call join-with,"\n",$(LSP_FLAGS)) > $(COMPILE_FLAGS)
+	@echo $(call join-with,"\n",$(LIBS)) >> $(COMPILE_FLAGS)
 
 # TODO(nk2ge5k): could i manage with ctags or something like that?
 dump-commands: $(COMPILE_FLAGS) # Writes compile_flags.txt for clangd lsp

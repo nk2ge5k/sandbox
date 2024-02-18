@@ -29,9 +29,9 @@
 #include "file.h"
 #include "lnglat.h"
 #include "poly.h"
-#include "proj.h"
 #include "proto/geobuf.pb-c.h"
 #include "types.h"
+#include "ui/text.h"
 
 #define MAX_TEXT_LEN 128
 
@@ -63,7 +63,8 @@ internal Grass__V1__Geobuf *readGeobufFromFile(const char *filename) {
     goto error;
   }
 
-  Grass__V1__Geobuf *geobuf = grass__v1__geobuf__unpack(NULL, file_size, geobuf_data);
+  Grass__V1__Geobuf *geobuf =
+      grass__v1__geobuf__unpack(NULL, file_size, geobuf_data);
   if (NULL == geobuf) {
     errorf("Failed to unpack geobuf\n");
     goto error;
@@ -71,7 +72,7 @@ internal Grass__V1__Geobuf *readGeobufFromFile(const char *filename) {
 
   free(geobuf_data);
   return geobuf;
-error:      // Late errors after allocatiing geobuf_data struct
+error: // Late errors after allocatiing geobuf_data struct
   free(geobuf_data);
 file_error: // Early errors after opening file
   fclose(file);
@@ -90,7 +91,10 @@ internal Vector2 *readRing(const int64_t *coords, const size_t length,
   for (size_t i = 0; i < n_coords; i += 2, cur++) {
     lng = coords[i] / precision;
     lat = coords[i + 1] / precision;
-    ring[cur] = projectWebMertacor(lng, lat);
+    ring[cur] = projPseudoMercator((LngLat){
+        .lng = lng,
+        .lat = lat,
+    });
   }
 
   return ring;
@@ -222,12 +226,8 @@ int commandMap(int argc, char **argv) {
     return 1;
   }
 
-  const int screen_width = 1200;
-  const int screen_height = 1000;
-  char textbuf[MAX_TEXT_LEN + 1];
-
-  // const Color start = YELLOW;
-  // const Color end = BLUE;
+  const int screen_width = 800;
+  const int screen_height = 600;
 
   Grass__V1__Geobuf *geobuf = readGeobufFromFile(argv[1]);
   if (geobuf == NULL) {
@@ -246,6 +246,7 @@ int commandMap(int argc, char **argv) {
 
   float zoom = 7;
   float scale = 1;
+
   Vector2 skew = {.x = 0, .y = 0};
   int i = 0;
 
@@ -256,7 +257,6 @@ int commandMap(int argc, char **argv) {
   SetTargetFPS(30);
 
   while (!WindowShouldClose()) {
-
     if (IsKeyDown(KEY_J)) {
       zoom -= 1.0f / zoom;
     } else if (IsKeyDown(KEY_K)) {
@@ -287,47 +287,37 @@ int commandMap(int argc, char **argv) {
       }
     }
 
-    zoom = Clamp(zoom, 6.0f, 20.0f);
-    scale = (1.0f / M_2_PI) * pow(2, zoom);
+    zoom = Clamp(zoom, 6.0f, 30.0f);
+    scale = projPesudoMercatorZoom(zoom);
+    Vector2 shift = Vector2Scale(skew, scale);
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    // for (size_t i = 0; i < n_polygons; i++) {
-    {
-      // color.a = 255;
-      // color.r = Remap((float)i,                // value
-      //                 0.0f, (float)n_polygons, // input
-      //                 start.r, end.r           // output
-      // );
-      // color.g = Remap((float)i,                // value
-      //                 0.0f, (float)n_polygons, // input
-      //                 start.g, end.g           // output
-      // );
-      // color.b = Remap((float)i,                // value
-      //                 0.0f, (float)n_polygons, // input
-      //                 start.b, end.b           // output
-      // );
 
-      drawPolygon(&polygons[i], Vector2Scale(skew, scale), scale, BLUE);
-      drawPolygonLines(&polygons[i], Vector2Scale(skew, scale), scale, BLACK);
-    }
-    {
-      snprintf(textbuf, MAX_TEXT_LEN, "Z: %.2f", zoom);
-      DrawText(textbuf, 10, 10, 20, BLACK);
-    }
-    {
-      snprintf(textbuf, MAX_TEXT_LEN, "X: %.2f", skew.x);
-      DrawText(textbuf, 10, 30, 20, BLACK);
-    }
-    {
-      snprintf(textbuf, MAX_TEXT_LEN, "Y: %.2f", skew.y);
-      DrawText(textbuf, 10, 50, 20, BLACK);
-    }
-    {
-      snprintf(textbuf, MAX_TEXT_LEN, "N: %d", i);
-      DrawText(textbuf, 10, 70, 20, BLACK);
+    DrawRectangleRec(
+        (Rectangle){
+            .x = shift.x,
+            .y = shift.y,
+            .width = pow(2.0L, zoom) - 1,
+            .height = pow(2.0L, zoom) - 1,
+        },
+        DARKBLUE);
+
+    for (size_t i = 0; i < n_polygons; i++) {
+      drawPolygon(&polygons[i], shift, scale, DARKGREEN);
+      drawPolygonLines(&polygons[i], shift, scale, BLACK);
     }
 
+    drawTextf(10, 10, 20, BLACK, "ZOOM: %.2f", zoom);
+    drawTextf(10, 30, 20, BLACK, "SKEW: (%.2f, %.2f)", skew.x, skew.y);
+    drawTextf(10, 50, 20, BLACK, "SCAL: %.2f", scale);
+
+    {
+      int width = GetScreenWidth();
+      int height = GetScreenHeight();
+      DrawLine(0, height / 2, width, height / 2, BLACK);
+      DrawLine(width / 2, 0, width / 2, height, BLACK);
+    }
     EndDrawing();
   }
 

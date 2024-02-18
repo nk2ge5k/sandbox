@@ -1,3 +1,5 @@
+#include "command.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +10,7 @@
 #include "command_server.h"
 #include "command_test_csv.h"
 #include "command_triangulate.h"
+#include "command_z_order_curve.h"
 #include "types.h"
 
 typedef int (*CommandHandler)(int, char **);
@@ -35,7 +38,7 @@ internal void printUsage(const char *prog, const Command *commands,
   }
 }
 
-int main(int argc, char **argv) {
+int run(int argc, char **argv) {
   static const Command commands[] = {
       {
           .hidden = false,
@@ -71,6 +74,12 @@ int main(int argc, char **argv) {
           .name = "client",
           .description = "simple client",
           .handler = commandClient,
+      },
+      {
+          .hidden = false,
+          .name = "z-order-curve",
+          .description = "Command for visualasing z-order curve",
+          .handler = commandZOrderCurve,
       },
       {
           .hidden = true,
