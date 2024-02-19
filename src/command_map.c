@@ -272,8 +272,9 @@ int commandMap(int argc, char **argv) {
   SetTargetFPS(30);
 
   int i = 0;
-  float zoom = 9.0f;
-  float pzoom = 9.0f;
+  float zoom, pzoom;
+  zoom = pzoom =
+      projPseudoMercatorZoomForSize(min_value(screen_width, screen_height));
   Vector2 offset = calcOffsetFor(lngLatZero(), zoom);
 
   while (!WindowShouldClose()) {

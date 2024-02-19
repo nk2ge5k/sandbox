@@ -100,6 +100,8 @@ f64 projPseudoMercatorZoom(f64 zoom) { return M_1_TAU * pow(2, zoom); }
 
 f64 projPseudoMercatorSize(f64 zoom) { return pow(2.0L, zoom) - 1; }
 
+f64 projPseudoMercatorZoomForSize(f64 size) { return log(size + 1) / M_LN2; }
+
 ////////////////////////////////////////////////////////////////////////////////
 /// TEST
 ////////////////////////////////////////////////////////////////////////////////

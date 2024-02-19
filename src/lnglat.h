@@ -74,6 +74,10 @@ f64 projPseudoMercatorZoom(f64 zoom);
 // i deiced to return size as single value.
 f64 projPseudoMercatorSize(f64 zoom);
 
+// projPseudoMercatorZoomForSize returns zoom value for the given map size in
+// pixels.
+f64 projPseudoMercatorZoomForSize(f64 size);
+
 #if TEST_BUILD
 #include "testhelp.h"
 TEST(LNGLAT_H);
