@@ -10,7 +10,6 @@
 #include "command_server.h"
 #include "command_test_csv.h"
 #include "command_triangulate.h"
-#include "command_z_order_curve.h"
 #include "types.h"
 
 typedef int (*CommandHandler)(int, char **);
@@ -74,12 +73,6 @@ int run(int argc, char **argv) {
           .name = "client",
           .description = "simple client",
           .handler = commandClient,
-      },
-      {
-          .hidden = false,
-          .name = "z-order-curve",
-          .description = "Command for visualasing z-order curve",
-          .handler = commandZOrderCurve,
       },
       {
           .hidden = true,
