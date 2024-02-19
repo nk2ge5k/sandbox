@@ -49,8 +49,21 @@ Vector2 projPseudoMercator(LngLat lnglat);
 // screen position.
 LngLat projPseudoMercatorInverse(Vector2 vec);
 
-// projPesudoMercatorZoom returns scaling factor for given zoom level
-f64 projPesudoMercatorZoom(f64 zoom);
+// projPseudoMercatorInverse returns geographical coordinates for the
+// screen position.
+// @slow: in most cases it will be slower to calculate zoom factor for
+// the scale because it has been calculated already. Basically it is just
+// a helper function.
+LngLat projPseudoMercatorZoomedInverse(Vector2 vec, f64 zoom);
+
+// projPseudoMercatorZoom returns scaling factor for given zoom level
+f64 projPseudoMercatorZoom(f64 zoom);
+
+// projPseudoMercatorSize returns size of the map, in pixels, for the given
+// zoom level.
+// NOTE(nk2ge5k): for the pseudo mercator projection map is a square, therefore
+// i deiced to return size as single value.
+f64 projPseudoMercatorSize(f64 zoom);
 
 #if TEST_BUILD
 #include "testhelp.h"

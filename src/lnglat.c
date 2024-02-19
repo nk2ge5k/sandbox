@@ -5,7 +5,6 @@
 #include "constans.h"
 #include "debug.h"
 
-
 f64 degsToRads(f64 degrees) { return degrees * M_PI_180; }
 
 f64 radsToDegs(f64 radians) { return radians * M_180_PI; }
@@ -49,8 +48,6 @@ Vector2 projPseudoMercator(LngLat lnglat) {
   };
 }
 
-f64 projPesudoMercatorZoom(f64 zoom) { return M_1_TAU * pow(2, zoom); }
-
 LngLat projPseudoMercatorInverse(Vector2 vec) {
   LngLat lnglat = {
       .lng = radsToDegs(vec.x - M_PI),
@@ -58,6 +55,18 @@ LngLat projPseudoMercatorInverse(Vector2 vec) {
   };
   return lnglat;
 }
+
+LngLat projPseudoMercatorZoomedInverse(Vector2 vec, f64 zoom) {
+  f64 scale = projPseudoMercatorZoom(zoom);
+  return projPseudoMercatorInverse((Vector2){
+      .x = vec.x / scale,
+      .y = vec.y / scale,
+  });
+}
+
+f64 projPseudoMercatorZoom(f64 zoom) { return M_1_TAU * pow(2, zoom); }
+
+f64 projPseudoMercatorSize(f64 zoom) { return pow(2.0L, zoom) - 1; }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// TEST

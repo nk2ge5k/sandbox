@@ -219,6 +219,30 @@ internal Polygon *readPolygonsFromGeobuf(Grass__V1__Geobuf *geobuf) {
   return polygons;
 }
 
+internal Vector2 mapOffset(f64 zoom) {
+
+  f64 size = projPseudoMercatorSize(zoom);
+
+  f64 maps_horizontal = (f64)GetScreenWidth() / size;
+  f64 maps_vertical = (f64)GetScreenHeight() / size;
+
+  Vector2 offset = {
+      .x = size * (maps_horizontal / 2.0L),
+      .y = size * (maps_vertical / 2.0L),
+  };
+
+  return offset;
+}
+internal LngLat lngLatForPosition(Vector2 pos, f64 zoom, Vector2 offset) {
+  return projPseudoMercatorZoomedInverse(Vector2Subtract(pos, offset), zoom);
+}
+
+internal Vector2 calcOffsetFor(LngLat lnglat, f64 zoom) {
+  Vector2 delta =
+      Vector2Scale(projPseudoMercator(lnglat), projPseudoMercatorZoom(zoom));
+  return Vector2Subtract(mapOffset(zoom), delta);
+}
+
 int commandMap(int argc, char **argv) {
   if (argc < 2) {
     fprintf(stderr, "Error: missing geobuf file argument\n");
@@ -244,35 +268,55 @@ int commandMap(int argc, char **argv) {
     return 1;
   }
 
-  float zoom = 7;
-  float scale = 1;
-
-  Vector2 skew = {.x = 0, .y = 0};
-  int i = 0;
-
-  // Color color;
-  debugf("Read %ld polygons\n", n_polygons);
-
   InitWindow(screen_width, screen_height, "Drawing polygons");
   SetTargetFPS(30);
 
+  int i = 0;
+  float zoom = 9.0f;
+  float pzoom = 9.0f;
+  Vector2 offset = calcOffsetFor(lngLatZero(), zoom);
+
   while (!WindowShouldClose()) {
+
+    if (IsKeyPressed(KEY_R)) {
+      zoom = pzoom = 9.0f;
+      offset = calcOffsetFor(lngLatZero(), zoom);
+    }
+
     if (IsKeyDown(KEY_J)) {
       zoom -= 1.0f / zoom;
     } else if (IsKeyDown(KEY_K)) {
       zoom += 1.0f / zoom;
     }
 
+    zoom = Clamp(zoom, 6.0f, 30.0f);
+    f64 size = projPseudoMercatorSize(zoom);
+
+    if (!FloatEquals(pzoom, zoom)) {
+      // @slow: I do not like this double coversion - it fills like it can be
+      // done more efficently, for example I could try and determine releative
+      // position of the inside of the map, not sure that it would work.
+      LngLat looked_at = lngLatForPosition(
+          (Vector2){
+              .x = GetScreenWidth() / 2.0f,
+              .y = GetScreenHeight() / 2.0f,
+          },
+          pzoom, offset);
+      offset = calcOffsetFor(looked_at, zoom);
+
+      pzoom = zoom;
+    }
+
     if (IsKeyDown(KEY_UP)) {
-      skew.y += 1.0f / zoom;
+      offset.y += size / 180.0f;
     } else if (IsKeyDown(KEY_DOWN)) {
-      skew.y -= 1.0f / zoom;
+      offset.y -= size / 180.0f;
     }
 
     if (IsKeyDown(KEY_LEFT)) {
-      skew.x += 1.0f / zoom;
+      offset.x += size / 180.0f;
     } else if (IsKeyDown(KEY_RIGHT)) {
-      skew.x -= 1.0f / zoom;
+      offset.x -= size / 180.0f;
     }
 
     if (IsKeyPressed(KEY_N)) {
@@ -287,37 +331,30 @@ int commandMap(int argc, char **argv) {
       }
     }
 
-    zoom = Clamp(zoom, 6.0f, 30.0f);
-    scale = projPesudoMercatorZoom(zoom);
-    Vector2 shift = Vector2Scale(skew, scale);
-
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    DrawRectangleRec(
+    DrawRectangleLinesEx(
         (Rectangle){
-            .x = shift.x,
-            .y = shift.y,
+            .x = offset.x,
+            .y = offset.y,
             .width = pow(2.0L, zoom) - 1,
             .height = pow(2.0L, zoom) - 1,
         },
-        DARKBLUE);
+        2.0f, BLACK);
 
+    f64 scale = projPseudoMercatorZoom(zoom);
     for (size_t i = 0; i < n_polygons; i++) {
-      drawPolygon(&polygons[i], shift, scale, DARKGREEN);
-      drawPolygonLines(&polygons[i], shift, scale, BLACK);
+      // drawPolygon(&polygons[i], offset, scale, DARKGREEN);
+      drawPolygonLines(&polygons[i], offset, scale, BLACK);
     }
 
-    drawTextf(10, 10, 20, BLACK, "ZOOM: %.2f", zoom);
-    drawTextf(10, 30, 20, BLACK, "SKEW: (%.2f, %.2f)", skew.x, skew.y);
-    drawTextf(10, 50, 20, BLACK, "SCAL: %.2f", scale);
+    drawTextf(10, 10, 10, BLACK, "ZOOM: %.2f", zoom);
+    drawTextf(10, 20, 10, BLACK, "OFFS: (%.2f, %.2f)", offset.x, offset.y);
+    drawTextf(10, 30, 10, BLACK, "SCAL: %.2f", scale);
+    DrawLine(0, screen_height / 2, screen_width, screen_height / 2, BLACK);
+    DrawLine(screen_width / 2, 0, screen_width / 2, screen_height, BLACK);
 
-    {
-      int width = GetScreenWidth();
-      int height = GetScreenHeight();
-      DrawLine(0, height / 2, width, height / 2, BLACK);
-      DrawLine(width / 2, 0, width / 2, height, BLACK);
-    }
     EndDrawing();
   }
 
