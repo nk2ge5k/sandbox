@@ -9,6 +9,38 @@ f64 degsToRads(f64 degrees) { return degrees * M_PI_180; }
 
 f64 radsToDegs(f64 radians) { return radians * M_180_PI; }
 
+BBox bboxFromLngLat(LngLat lnglat) {
+  BBox result = {
+      .sw = lnglat,
+      .ne = lnglat,
+  };
+  return result;
+}
+
+BBox bboxExpandLngLat(BBox bbox, LngLat lnglat) {
+  BBox result = {
+      .sw =
+          {
+              .lng = min_value(bbox.sw.lng, lnglat.lng),
+              .lat = min_value(bbox.sw.lat, lnglat.lat),
+          },
+      .ne =
+          {
+              .lng = max_value(bbox.ne.lng, lnglat.lng),
+              .lat = max_value(bbox.ne.lat, lnglat.lat),
+          },
+  };
+  return result;
+}
+
+LngLat bboxCenter(BBox bbox) {
+  LngLat result = {
+      .lng = (bbox.sw.lng + bbox.ne.lng) / 2.0L,
+      .lat = (bbox.sw.lat + bbox.ne.lat) / 2.0L,
+  };
+  return result;
+}
+
 f64 haversineDistance(LngLat a, LngLat b) {
   assertf(0, "haversineDistance is not implemented yet\n");
   return 0.0f;

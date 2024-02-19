@@ -27,6 +27,15 @@ f64 degsToRads(f64 degrees);
 // Convert from radians to decimal degrees.
 f64 radsToDegs(f64 radians);
 
+// bboxFromLngLat returns bounding box created form a single point.
+BBox bboxFromLngLat(LngLat lnglat);
+
+// bboxExpand expands rectangle to include given point.
+BBox bboxExpandLngLat(BBox bbox, LngLat lnglat);
+
+// bboxCenter returns center of the bounding box
+LngLat bboxCenter(BBox bbox);
+
 // Calculates haversine distance between two points on the sphere
 // TODO(nk2ge5k): not implemented yet
 f64 haversineDistance(LngLat a, LngLat b);
