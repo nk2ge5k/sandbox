@@ -65,19 +65,19 @@ String stringMakeFromFile(FILE *file) {
     return result;
   }
 
-  size_t file_size = fileSize(file);
+  i64 file_size = fileSize(file);
   if (file_size <= 0) {
     return result;
   }
 
   result = stringMake(file_size);
 
-  int64_t nread = fileReadIntoString(&result, file);
+  i64 nread = fileReadIntoString(&result, file);
   if (nread < 0) {
     errorf("Failed to read file\n");
   }
-  if ((size_t)nread != file_size) {
-    errorf("Short read %lld != %ld\n", nread, file_size);
+  if (nread != file_size) {
+    errorf("Short read " Fi64 " != " Fi64 "\n", nread, file_size);
   }
 
   result.len = nread;
@@ -101,7 +101,7 @@ bool stringHasPrefix(String str, String prefix) {
          stringEqual(stringSlice(str, 0, prefix.len), prefix);
 }
 
-int stringIndexOf(String str, char ch) {
+i32 stringIndexOf(String str, char ch) {
   for (size_t i = 0; i < str.len; i++) {
     if (ch == str.v[str.offset + i]) {
       return i;
@@ -110,7 +110,7 @@ int stringIndexOf(String str, char ch) {
   return -1;
 }
 
-int stringIndexOfAfter(String str, size_t offset, char ch) {
+i32 stringIndexOfAfter(String str, size_t offset, char ch) {
   for (size_t i = offset + 1; i < str.len; i++) {
     if (ch == str.v[str.offset + i]) {
       return i;
@@ -119,7 +119,7 @@ int stringIndexOfAfter(String str, size_t offset, char ch) {
   return -1;
 }
 
-int stringIndexOfString(String haystack, String needle) {
+i32 stringIndexOfString(String haystack, String needle) {
   if (haystack.len < needle.len || needle.len == 0) {
     // errorf("haystack.len < needle.len || needle.len == 0");
     return -1;
@@ -129,7 +129,7 @@ int stringIndexOfString(String haystack, String needle) {
 
   char first = stringCharAt(needle, 0);
   while (haystack.len >= needle.len) {
-    int cur = stringIndexOf(haystack, first);
+    i32 cur = stringIndexOf(haystack, first);
     if (cur == -1) {
       // errorf("stringIndexOf(" PRSTR ", first) == -1\n",
       // STRING_FMT(haystack));
@@ -140,7 +140,7 @@ int stringIndexOfString(String haystack, String needle) {
     haystack.len -= cur;
 
     if (stringHasPrefix(haystack, needle)) {
-      return (int)(haystack.offset - start_offset);
+      return (i32)(haystack.offset - start_offset);
     }
 
     haystack.offset += 1;

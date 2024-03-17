@@ -5,13 +5,15 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "types.h"
+
 #define STR(data) stringMakeFrom(data)
 
 // Format helpers for printf/sprintf... functions
 #define PRSTR "%.*s"
 #define PRSTR_RPAD(N) "%-" #N ".*s"
-#define STRING_FMT(str) (int)str.len, (str.v + str.offset)
-#define PSTRING_FMT(str) (int)str->len, (str->v + str->offset)
+#define STRING_FMT(str) (i32)str.len, (str.v + str.offset)
+#define PSTRING_FMT(str) (i32)str->len, (str->v + str->offset)
 
 typedef struct String {
   // Offset in the data array where string starts
@@ -57,16 +59,16 @@ bool stringHasPrefix(String str, String prefix);
 
 // stringIndexOf returns first index of the character ch or -1 if character
 // not found.
-int stringIndexOf(String str, char ch);
+i32 stringIndexOf(String str, char ch);
 
 // stringIndexOfAfter returns first index of the character ch after offset or
 // -1 if character not found.
-int stringIndexOfAfter(String str, size_t offset, char ch);
+i32 stringIndexOfAfter(String str, size_t offset, char ch);
 
 // stringIndexOfString searches for the start of given substring.
 // Returns -1 if needle is not found in the haystack or needle's length greater
 // then haystack's length.
-int stringIndexOfString(String haystack, String needle);
+i32 stringIndexOfString(String haystack, String needle);
 
 // stringSlice returns slice of the string.
 String stringSlice(String str, size_t start, size_t len);

@@ -11,7 +11,6 @@
 
 #include "debug.h"
 #include "poly.h"
-#include "types.h"
 #include "ui/text.h"
 
 // Maximum number of points in ring
@@ -89,9 +88,9 @@ internal void frame() {
   }
 }
 
-int commandTriangulate(int argc, char **argv) {
-  const int screen_width = 800;
-  const int screen_height = 600;
+i32 commandTriangulate(i32 argc, char **argv) {
+  const i32 screen_width = 800;
+  const i32 screen_height = 600;
 
   InitWindow(screen_width, screen_height, "Drawing polygons");
   SetTargetFPS(30);

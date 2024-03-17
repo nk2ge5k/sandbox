@@ -1,6 +1,8 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-int run(int argc, char **argv);
+#include "types.h"
+
+i32 run(i32 argc, char **argv);
 
 #endif

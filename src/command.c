@@ -10,9 +10,8 @@
 #include "command_server.h"
 #include "command_test_csv.h"
 #include "command_triangulate.h"
-#include "types.h"
 
-typedef int (*CommandHandler)(int, char **);
+typedef i32 (*CommandHandler)(i32, char **);
 
 typedef struct Command {
   // Is command hidden?
@@ -37,7 +36,7 @@ internal void printUsage(const char *prog, const Command *commands,
   }
 }
 
-int run(int argc, char **argv) {
+i32 run(i32 argc, char **argv) {
   static const Command commands[] = {
       {
           .hidden = false,

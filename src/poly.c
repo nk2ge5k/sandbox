@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 #include "debug.h"
-#include "types.h"
 
 internal void triangulate(Polygon *polgyon);
 
@@ -28,8 +27,7 @@ Polygon createPolygon(Vector2 *vertices, size_t size) {
 
 void freePolygon(Polygon *polygon) { free(polygon->triangles); }
 
-void drawPolygon(const Polygon *polygon, Vector2 skew, float scale,
-                 Color color) {
+void drawPolygon(const Polygon *polygon, Vector2 skew, f32 scale, Color color) {
   size_t a, b, c;
   for (size_t i = 0; i < polygon->triangles_size; i += 3) {
     a = polygon->triangles[i + 0];
@@ -45,7 +43,7 @@ void drawPolygon(const Polygon *polygon, Vector2 skew, float scale,
   }
 }
 
-void drawPolygonLines(const Polygon *polygon, Vector2 skew, float scale,
+void drawPolygonLines(const Polygon *polygon, Vector2 skew, f32 scale,
                       Color color) {
   Vector2 start, end;
   for (size_t i = 1; i < polygon->vertices_size; i++) {
@@ -167,20 +165,20 @@ bool pointInTriangle(const Vector2 *a, const Vector2 *b, const Vector2 *c,
 // area < 0 - triangle oriented in clockwise direction
 // area = 0 - triangle is collinear
 // area > 0 - triangle oriented in counterclockwise direction
-internal float areaOfTriangle(const Vector2 *a, const Vector2 *b,
-                              const Vector2 *c) {
+internal f32 areaOfTriangle(const Vector2 *a, const Vector2 *b,
+                            const Vector2 *c) {
   return (b->y - a->y) * (c->x - b->x) - (b->x - a->x) * (c->y - b->y);
 }
 
 // Sign returns a sign of the floating point value.
-internal int32_t sign(float val) { return (0.0f < val) - (val < 0.0f); }
+internal i32 sign(f32 val) { return (0.0f < val) - (val < 0.0f); }
 
 // polygonSign determines sign of the polygon
 // sign < 0 - polygon oriented in clockwise direction
 // sign = 0 - polygon is collinear
 // sign > 0 - polygon oriented in counterclockwise direction
-internal int32_t polygonSign(struct Node *root) {
-  float area = 0;
+internal i32 polygonSign(struct Node *root) {
+  f32 area = 0;
   struct Node *node;
 
   for (node = root->next; node != root; node = node->next) {
@@ -197,13 +195,13 @@ internal int32_t polygonSign(struct Node *root) {
 /// Eartipping
 ////////////////////////////////////////////////////////////////////////////////
 
-internal bool isEar(Node *node, int32_t polygon_direction) {
+internal bool isEar(Node *node, i32 polygon_direction) {
   Node *a = node->prev;
   Node *b = node;
   Node *c = node->next;
 
-  float area = areaOfTriangle(a->vertex, b->vertex, c->vertex);
-  int32_t direction = sign(area);
+  f32 area = areaOfTriangle(a->vertex, b->vertex, c->vertex);
+  i32 direction = sign(area);
   if (area == 0 || sign(area) != polygon_direction) {
     return false;
   }
@@ -222,7 +220,7 @@ internal bool isEar(Node *node, int32_t polygon_direction) {
   return true;
 }
 
-internal Node* filterPoints(Node *root) {
+internal Node *filterPoints(Node *root) {
   Node *end = root;
   Node *cur = root;
   Node *next;
@@ -295,7 +293,7 @@ internal void triangulate(Polygon *polygon) {
 
   bool filtered = false;
 
-  int32_t poly_sign = polygonSign(root);
+  i32 poly_sign = polygonSign(root);
 
   for (cur = root; cur->next != cur->prev; niterations++) {
     a = cur->prev;
@@ -325,7 +323,7 @@ internal void triangulate(Polygon *polygon) {
     if (cur == stop) {
       if (filtered) {
         // If points already filtered then just exit loop
-        // TODO(nk2ge5k): this wont allow to fill self intersecting polygons 
+        // TODO(nk2ge5k): this wont allow to fill self intersecting polygons
         // and polygons that share points that are not close by.
         break;
       }

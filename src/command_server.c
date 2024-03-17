@@ -12,8 +12,8 @@
 
 #define BUFSIZE 1024
 
-int commandServer(int argc, char **argv) {
-  int server_socket = netTCPListen(8080);
+i32 commandServer(i32 argc, char **argv) {
+  i32 server_socket = netTCPListen(8080);
   if (server_socket == -1) {
     errorf("Failed to listen\n");
     return 1;
@@ -22,12 +22,12 @@ int commandServer(int argc, char **argv) {
   char buffer[BUFSIZE] = {0};
 
   while (true) {
-    int client_socket = netAcceptConnection(server_socket);
+    i32 client_socket = netAcceptConnection(server_socket);
     if (client_socket == -1) {
       continue;
     }
 
-    int nread = read(client_socket, &buffer, BUFSIZE - 1);
+    i32 nread = read(client_socket, &buffer, BUFSIZE - 1);
     if (nread < 0) {
       debugf("could not read from socket: %s\n", strerror(errno));
       goto cleanup;

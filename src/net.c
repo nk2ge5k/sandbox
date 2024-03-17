@@ -9,13 +9,13 @@
 
 #include "debug.h"
 
-int netTCPListen(int port) {
-  int sock = socket(AF_INET, SOCK_STREAM, 0);
+i32 netTCPListen(i32 port) {
+  i32 sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock == -1) {
     return -1;
   }
 
-  int yes;
+  i32 yes;
   // allow local address reuse
   setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
@@ -37,13 +37,13 @@ int netTCPListen(int port) {
   return sock;
 }
 
-int netAcceptConnection(int server_socket) {
+i32 netAcceptConnection(i32 server_socket) {
   struct sockaddr_in sa; // Remote address. Currently unsed.
   socklen_t len = sizeof(sa);
 
   // TODO(nk2ge5k): add hard limit on the loop.
   while (1) {
-    int in = accept(server_socket, (struct sockaddr *)&sa, &len);
+    i32 in = accept(server_socket, (struct sockaddr *)&sa, &len);
     if (in == -1) {
       if (errno == EINTR) {
         continue;
@@ -55,7 +55,7 @@ int netAcceptConnection(int server_socket) {
   }
 }
 
-int netTCPDial(char *host, uint16_t port) {
+i32 netTCPDial(char *host, u16 port) {
   char portstr[6] = {0};
   struct addrinfo hints, *servinfo, *p;
 
@@ -70,7 +70,7 @@ int netTCPDial(char *host, uint16_t port) {
   }
 
   for (p = servinfo; p != NULL; p = p->ai_next) {
-    int sock;
+    i32 sock;
     if ((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
       continue;
     }

@@ -9,9 +9,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int64_t fileSize(FILE *file) {
-  int64_t size = -1;
-  int64_t cur = ftell(file); // saving current position
+i64 fileSize(FILE *file) {
+  i64 size = -1;
+  i64 cur = ftell(file); // saving current position
 
   if (fseek(file, 0, SEEK_END) < 0) {
     goto finish;
@@ -28,7 +28,7 @@ finish:
   return size;
 }
 
-int64_t fileReadInto(void *dst, size_t length, FILE *file) {
+i64 fileReadInto(void *dst, size_t length, FILE *file) {
   size_t nread = 0;
 
   while (nread < length) {
@@ -42,7 +42,7 @@ int64_t fileReadInto(void *dst, size_t length, FILE *file) {
   return nread;
 }
 
-int64_t fileReadIntoString(String *dst, FILE *file) {
-  int64_t nread = fileReadInto(dst->v, dst->len, file);
+i64 fileReadIntoString(String *dst, FILE *file) {
+  i64 nread = fileReadInto(dst->v, dst->len, file);
   return nread;
 }

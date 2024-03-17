@@ -1,2 +1,3 @@
 *.geobuf
 /submodules
+/src/proto

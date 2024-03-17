@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "file.h"
 #include "str.h"
+#include "types.h"
 
 int commandTestCsv(int argc, char **argv) {
   if (argc < 2) {
@@ -19,20 +20,20 @@ int commandTestCsv(int argc, char **argv) {
     return 1;
   }
 
-  int64_t file_size = fileSize(file);
+  i64 file_size = fileSize(file);
   if (file_size <= 0) {
     errorf("Failed to get file size\n");
     goto error;
   }
 
   String content = stringMake(file_size); // @leak
-  int64_t nread = fileReadIntoString(&content, file);
+  i64 nread = fileReadIntoString(&content, file);
 
   if (nread < 0) {
     errorf("Failed to read file\n");
     goto error;
   } else if (nread != file_size) {
-    errorf("Short read %lld != %lld\n", nread, file_size);
+    errorf("Short read " Fi64 " != " Fi64 "\n", nread, file_size);
     goto error;
   }
 

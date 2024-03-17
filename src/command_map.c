@@ -15,7 +15,6 @@
 #include "command_map.h"
 
 #include <errno.h>
-#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +29,6 @@
 #include "lnglat.h"
 #include "poly.h"
 #include "proto/geobuf.pb-c.h"
-#include "types.h"
 #include "ui/text.h"
 
 #define MAX_TEXT_LEN 128
@@ -48,18 +46,18 @@ internal Grass__V1__Geobuf *readGeobufFromFile(const char *filename) {
     goto file_error;
   }
 
-  int64_t file_size = fileSize(file);
+  i64 file_size = fileSize(file);
   if (file_size < 0) {
     errorf("Failed to get file size of file %s\n", filename);
     goto file_error;
   }
 
-  uint8_t *geobuf_data = malloc(sizeof(uint8_t) * file_size + 1);
+  u8 *geobuf_data = malloc(sizeof(u8) * file_size + 1);
   memset(geobuf_data, 0, file_size + 1);
 
-  int64_t read = fileReadInto(geobuf_data, file_size, file);
+  i64 read = fileReadInto(geobuf_data, file_size, file);
   if (read != file_size) {
-    errorf("Short read %lld != %lld\n", read, file_size);
+    errorf("Short read " Fi64 " != " Fi64 "\n", read, file_size);
     goto error;
   }
 
@@ -80,11 +78,11 @@ file_error: // Early errors after opening file
 }
 
 // readRing reads ring of given length from array of geobuf coordinates.
-internal Vector2 *readRing(const int64_t *coords, const size_t length,
-                           const float precision) {
+internal Vector2 *readRing(const i64 *coords, const size_t length,
+                           const f32 precision) {
   Vector2 *ring = malloc(sizeof(Vector2) * length);
 
-  float lng, lat;
+  f32 lng, lat;
   size_t cur = 0;
   const size_t n_coords = length * 2;
 
@@ -100,7 +98,7 @@ internal Vector2 *readRing(const int64_t *coords, const size_t length,
   return ring;
 }
 
-internal void appendPolygon(Polygon **dst, const float precision,
+internal void appendPolygon(Polygon **dst, const f32 precision,
                             const Grass__V1__Geometry *geometry) {
   assert(geometry->n_lengths >= 2);
   // TODO(nk2ge5k): for now we do not handle hole just exteriors.
@@ -110,16 +108,16 @@ internal void appendPolygon(Polygon **dst, const float precision,
   arrput(*dst, createPolygon(ring, exterior_len));
 }
 
-internal void appendMultiPolygon(Polygon **dst, const float precision,
+internal void appendMultiPolygon(Polygon **dst, const f32 precision,
                                  const Grass__V1__Geometry *geometry) {
   assert(geometry->n_lengths >= 3);
 
   Vector2 *ring;
-  uint32_t *lengths = geometry->lengths;
-  int64_t *coords = geometry->coords;
+  u32 *lengths = geometry->lengths;
+  i64 *coords = geometry->coords;
 
   size_t n_polygons = *lengths;
-  int n_rings;
+  i32 n_rings;
 
   lengths++;
 
@@ -143,14 +141,14 @@ internal void appendMultiPolygon(Polygon **dst, const float precision,
 }
 
 internal char *stringProperty(const Grass__V1__Properties *props,
-                              const int key) {
+                              const i32 key) {
   if (props == NULL || key < 0) {
     return "<UNKNOWN>";
   }
 
   size_t i = 0;
   for (; i < props->n_keys; i++) {
-    if (props->keys[i] == (uint32_t)key) {
+    if (props->keys[i] == (u32)key) {
       break;
     }
   }
@@ -163,7 +161,7 @@ internal char *stringProperty(const Grass__V1__Properties *props,
   return props->values[i]->string_value;
 }
 
-internal int propertyKey(const Grass__V1__Geobuf *geobuf, const char *name) {
+internal i32 propertyKey(const Grass__V1__Geobuf *geobuf, const char *name) {
   for (size_t i = 0; i < geobuf->n_keys; i++) {
     if (strcmp(name, geobuf->keys[i]) == 0) {
       return i;
@@ -172,8 +170,8 @@ internal int propertyKey(const Grass__V1__Geobuf *geobuf, const char *name) {
   return -1;
 }
 
-internal void appendFeature(Polygon **dst, const float precision,
-                            const int name_key,
+internal void appendFeature(Polygon **dst, const f32 precision,
+                            const i32 name_key,
                             const Grass__V1__Feature *feature) {
   debugf("Creating polygon for %s country\n",
          stringProperty(feature->properties, name_key));
@@ -191,8 +189,8 @@ internal void appendFeature(Polygon **dst, const float precision,
 }
 
 internal void
-appendFeatureCollection(Polygon **dst, const float precision,
-                        const int name_key,
+appendFeatureCollection(Polygon **dst, const f32 precision,
+                        const i32 name_key,
                         const Grass__V1__FeatureCollection *collection) {
   for (size_t i = 0; i < collection->n_features; i++) {
     appendFeature(dst, precision, name_key, collection->features[i]);
@@ -200,8 +198,8 @@ appendFeatureCollection(Polygon **dst, const float precision,
 }
 
 internal Polygon *readPolygonsFromGeobuf(Grass__V1__Geobuf *geobuf) {
-  const float precision = powf(10.0, geobuf->precision);
-  const int name_key = propertyKey(geobuf, "name");
+  const f32 precision = powf(10.0, geobuf->precision);
+  const i32 name_key = propertyKey(geobuf, "name");
   Polygon *polygons = NULL;
 
   switch (geobuf->data_type_case) {
@@ -243,15 +241,15 @@ internal Vector2 calcOffsetFor(LngLat lnglat, f64 zoom) {
   return Vector2Subtract(mapOffset(zoom), delta);
 }
 
-int commandMap(int argc, char **argv) {
+i32 commandMap(i32 argc, char **argv) {
   if (argc < 2) {
     fprintf(stderr, "Error: missing geobuf file argument\n");
     fprintf(stderr, "  Usage: %s FILE\n", *argv);
     return 1;
   }
 
-  const int screen_width = 800;
-  const int screen_height = 600;
+  const i32 screen_width = 800;
+  const i32 screen_height = 600;
 
   Grass__V1__Geobuf *geobuf = readGeobufFromFile(argv[1]);
   if (geobuf == NULL) {
@@ -271,8 +269,8 @@ int commandMap(int argc, char **argv) {
   InitWindow(screen_width, screen_height, "Drawing polygons");
   SetTargetFPS(30);
 
-  int i = 0;
-  float zoom, pzoom;
+  i32 i = 0;
+  f32 zoom, pzoom;
   zoom = pzoom =
       projPseudoMercatorZoomForSize(min_value(screen_width, screen_height));
   Vector2 offset = calcOffsetFor(lngLatZero(), zoom);

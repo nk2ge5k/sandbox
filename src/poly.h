@@ -4,6 +4,8 @@
 
 #include <raylib.h>
 
+#include "types.h"
+
 // Polygon
 typedef struct Polygon {
   // Polygon vertices
@@ -24,11 +26,11 @@ void freePolygon(Polygon *polygon);
 
 // drawPolygon draws polygon and fills it with color by spliting polygon
 // to the multiple triangles.
-void drawPolygon(const Polygon *polygon, Vector2 skew, float scale,
+void drawPolygon(const Polygon *polygon, Vector2 skew, f32 scale,
                  Color color);
 
 // drawPolygonLines draws polygon outline
-void drawPolygonLines(const Polygon *polygon, Vector2 skew, float scale,
+void drawPolygonLines(const Polygon *polygon, Vector2 skew, f32 scale,
                       Color color);
 
 #endif

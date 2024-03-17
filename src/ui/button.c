@@ -1,16 +1,14 @@
 #include "button.h"
 
-#include "types.h"
-
-internal inline int buttonSpacing(int font_size) {
+internal inline i32 buttonSpacing(i32 font_size) {
   // NOTE(nk2ge5k): this spacing is borrowed from raylib source code
   // I do not fully understand why division by 10.
   return font_size / 10;
 }
 
 // buttonFromText creates new button from the text.
-Button buttonFromText(char *text, int font_size, Vector2 position,
-                      float padding) {
+Button buttonFromText(char *text, i32 font_size, Vector2 position,
+                      f32 padding) {
 
   Vector2 size = MeasureTextEx(GetFontDefault(), text, font_size,
                                buttonSpacing(font_size));

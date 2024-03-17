@@ -25,7 +25,6 @@
 #include "debug.h"
 #include "lnglat.h"
 #include "str.h"
-#include "types.h"
 #include "ui/button.h"
 #include "ui/text.h"
 
@@ -64,14 +63,14 @@ internal bool lineAppendVertex(Line *dst, Vector2 vec) {
 }
 
 // lineVerticiesDraw draws every vertex of the line on the screen
-internal void lineVerticiesDraw(const Line *line, int radius, Color color) {
+internal void lineVerticiesDraw(const Line *line, i32 radius, Color color) {
   for (size_t i = 0; i < line->length; i++) {
     DrawCircleV(line->vertices[i], radius, color);
   }
 }
 
 // lineDraw draws the line on the screen
-internal void lineDraw(const Line *line, float thick, Color color) {
+internal void lineDraw(const Line *line, f32 thick, Color color) {
   for (size_t i = 1; i < line->length; i++) {
     DrawLineEx(line->vertices[i - 1], // start
                line->vertices[i],     // end
@@ -123,7 +122,7 @@ internal bool multilineAddLine(MultiLine *mline, Line *line) {
   return multilineAddLineVec(mline, line->vertices, line->length);
 }
 
-internal void multilineDraw(const MultiLine *mline, float thick, Color color) {
+internal void multilineDraw(const MultiLine *mline, f32 thick, Color color) {
   size_t i, j;
   size_t offset = 0;
   for (i = 0; i < mline->length; i++) {
@@ -157,12 +156,12 @@ internal void indiciesAppend(Indicies *dst, size_t index) {
 
 internal void indiciesClear(Indicies *dst) { dst->length = 0; }
 
-internal float perpendicularDistance(Vector2 p, Vector2 start, Vector2 end) {
-  float a = p.x - start.x;
+internal f32 perpendicularDistance(Vector2 p, Vector2 start, Vector2 end) {
+  f32 a = p.x - start.x;
 
-  float b = p.y - start.y;
-  float c = end.x - start.x;
-  float d = end.y - start.y;
+  f32 b = p.y - start.y;
+  f32 c = end.x - start.x;
+  f32 d = end.y - start.y;
   if (c == 0 && d == 0) {
     return 0;
   }
@@ -171,15 +170,15 @@ internal float perpendicularDistance(Vector2 p, Vector2 start, Vector2 end) {
 
 // Forward declaration of the function since it is a recursive function.
 internal void ramerDouglasPeuker(Indicies *dst, Vector2 *vertices, size_t start,
-                                 size_t end, float epsilon);
+                                 size_t end, f32 epsilon);
 
 internal void ramerDouglasPeuker(Indicies *dst, Vector2 *vertices, size_t start,
-                                 size_t end, float epsilon) {
-  float max_distance = 0; // maximum distance
+                                 size_t end, f32 epsilon) {
+  f32 max_distance = 0; // maximum distance
   size_t index;           // index of the max distance point
 
   for (size_t i = start + 1; i < end; i++) {
-    float distance =
+    f32 distance =
         perpendicularDistance(vertices[i], vertices[start], vertices[end]);
     assert(distance >= 0.0f);
     if (distance > max_distance) {
@@ -205,7 +204,7 @@ internal void ramerDouglasPeuker(Indicies *dst, Vector2 *vertices, size_t start,
 ////////////////////////////////////////////////////////////////////////////////
 
 internal void printAngles(const Line *line) {
-  float angle;
+  f32 angle;
   for (size_t i = 1; i < line->length; i++) {
     angle =
         radsToDegs(Vector2LineAngle(line->vertices[i - 1], line->vertices[i]));
@@ -219,9 +218,9 @@ internal void printAngles(const Line *line) {
 internal Line approximateStraight(const Vector2 *vertices, size_t length) {
   Line line = {};
   size_t i;
-  float a, b;
-  float sum_x = 0, sum_y = 0;
-  float sum_sqr_x = 0, sum_xy = 0;
+  f32 a, b;
+  f32 sum_x = 0, sum_y = 0;
+  f32 sum_sqr_x = 0, sum_xy = 0;
 
   if (length < 2) {
     return line;
@@ -234,9 +233,9 @@ internal Line approximateStraight(const Vector2 *vertices, size_t length) {
     sum_sqr_x += (vertices[i].x * vertices[i].x);
   }
 
-  b = ((float)length * sum_xy - sum_x * sum_y) /
-      ((float)length * sum_sqr_x - sum_x * sum_x);
-  a = (sum_y - b * sum_x) / (float)length;
+  b = ((f32)length * sum_xy - sum_x * sum_y) /
+      ((f32)length * sum_sqr_x - sum_x * sum_x);
+  a = (sum_y - b * sum_x) / (f32)length;
 
   for (i = 0; i < length; i++) {
     lineAppendVertex(&line, //
@@ -251,9 +250,9 @@ internal Line approximateStraight(const Vector2 *vertices, size_t length) {
 
 internal MultiLine approximateStraights(const Line *line) {
   size_t start = 0;     // start index of current segment
-  float target_angle;   // "golden" angle
-  float current_angle;  // angle of the current line (two points)
-  float diff;           // difference between current angle and golden one
+  f32 target_angle;   // "golden" angle
+  f32 current_angle;  // angle of the current line (two points)
+  f32 diff;           // difference between current angle and golden one
   Line approx;          // approximated line for the segment
   MultiLine mline = {}; // resulting multiline
 
@@ -311,7 +310,7 @@ global Button button_run = {};
 // Button that suppose to clear lines from the screen
 global Button button_clear = {};
 
-global float epsilon = 0.0f;
+global f32 epsilon = 0.0f;
 
 internal void frame() {
   ClearBackground(RAYWHITE);
@@ -395,14 +394,14 @@ Vector2 parseVector(String str) {
   // string format is (-5.727941989898682,41.27079391479492)
   str = stringSlice(str, 1, str.len - 2);
 
-  int comma_pos = stringIndexOf(str, COMMA);
+  i32 comma_pos = stringIndexOf(str, COMMA);
   assert(comma_pos > 0);
 
   stringCopy(textbuf, stringSlice(str, 0, comma_pos));
-  float lng = atof(textbuf);
+  f32 lng = atof(textbuf);
 
   stringCopy(textbuf, stringSlice(str, comma_pos + 1, str.len - comma_pos - 1));
-  float lat = atof(textbuf);
+  f32 lat = atof(textbuf);
 
   return projPseudoMercator((LngLat){
       .lng = lng,
@@ -458,7 +457,7 @@ cleanup:
   return result;
 }
 
-int commandFixLine(int argc, char **argv) {
+i32 commandFixLine(i32 argc, char **argv) {
   size_t asset_size;
   Vector2 *asset;
 
@@ -469,8 +468,8 @@ int commandFixLine(int argc, char **argv) {
     asset = loadFromFile(argv[1], &asset_size);
   }
 
-  const int screen_width = 800;
-  const int screen_height = 600;
+  const i32 screen_width = 800;
+  const i32 screen_height = 600;
 
   InitWindow(screen_width, screen_height, "Drawing lines");
   SetTargetFPS(30);

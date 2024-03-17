@@ -8,8 +8,8 @@
 #include "str.h"
 #include "http.h"
 
-int commandClient(int argc, char **argv) {
-  int client_socket = netTCPDial("localhost", 8080);
+i32 commandClient(i32 argc, char **argv) {
+  i32 client_socket = netTCPDial("localhost", 8080);
   if (client_socket == -1) {
     errorf("dial failed\n");
     return 1;
@@ -17,7 +17,7 @@ int commandClient(int argc, char **argv) {
 
   char *payload = "GET /hello HTTP/1.1\r\n";
 
-  int nwrite = write(client_socket, payload, strlen(payload));
+  i32 nwrite = write(client_socket, payload, strlen(payload));
   if (nwrite < 0) {
     errorf("could not write request: %s\n", strerror(errno));
     goto cleanup;
