@@ -11,16 +11,19 @@ typedef struct LngLat {
   f64 lat;
 } LngLat;
 
+// lngLatZero returns zero initialized LngLat
+#define lngLatZero()                                                           \
+  (LngLat) { .lng = 0, .lat = 0 }
+
 // BBox represents square on the surface of the earth
 typedef struct BBox {
   LngLat sw; // minimum
   LngLat ne; // maximum
 } BBox;
 
-// lngLatZero returns zero initialized LngLat
-#define lngLatZero()                                                           \
-  (LngLat) { .lng = 0, .lat = 0 }
-
+// lngLatZero returns zero initialized BBox
+#define bboxZero()                                                             \
+  (BBox) { .sw = lngLatZero(), .ne = lngLatZero() }
 // Convert from decimal degrees to radians.
 f64 degsToRads(f64 degrees);
 

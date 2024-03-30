@@ -38,5 +38,9 @@ typedef double f64;
 // expressions as values, because it will force value recalculation.
 #define min_value(a, b) (((a) < (b)) ? (a) : (b))
 
+// square returns square of the value.
+// NOTE(nk2ge5k): use with caution - this macro must not be used with complex
+// expressions as values, because it will force value recalculation.
+#define square(a) ((a) * (a))
 
 #endif

@@ -22,7 +22,7 @@ join-with = $(subst $(space),$1,$(strip $2))
 
 $(BUILD):
 	@mkdir -p $(ROOT_DIR)/build
-	$(CC) -DDEBUG=1 -DSTB_DS_IMPLEMENTATION \
+	$(CC) -DDEBUG=1 \
 		$(LIBS) $(CFLAGS) $(OPTS) main.c $(SOURCES) -o build/sandbox $(LDFLAGS)
 
 build: $(BUILD) ## Build binary
@@ -30,7 +30,7 @@ build: $(BUILD) ## Build binary
 
 test: ## Run tests
 	@mkdir -p $(ROOT_DIR)/build
-	@$(CC) -DDEBUG=1 -DTEST_BUILD=1 -DSTB_DS_IMPLEMENTATION \
+	@$(CC) -DDEBUG=1 -DTEST_BUILD=1 \
 		$(LIBS) $(CFLAGS) $(OPTS) test.c $(SOURCES) -o build/sandbox.test $(LDFLAGS)
 	@./build/sandbox.test
 .PHONY: test

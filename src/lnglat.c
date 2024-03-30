@@ -42,7 +42,7 @@ LngLat bboxCenter(BBox bbox) {
 }
 
 f64 haversineDistance(LngLat a, LngLat b) {
-  assertf(0, "haversineDistance is not implemented yet\n");
+  assertf(0, "haversineDistance is not implemented yet");
   return 0.0f;
 }
 

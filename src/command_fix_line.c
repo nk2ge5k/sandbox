@@ -20,6 +20,7 @@
 
 #include <raylib.h>
 #include <raymath.h>
+#include <stb_ds.h>
 
 #include "csv.h"
 #include "debug.h"
@@ -33,16 +34,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Maximum number of points in ring
-#define MAX_POINTS 128
-
-#define SQR(a) (a * a)
+#define MAX_POINTS 1024
 
 typedef struct Line {
   // Line points
-  Vector2 vertices[MAX_POINTS];
-  // Line length
-  size_t length;
+  Vector2 *vertices;
 } Line;
+
+typedef struct Geometry {
+  // Geomtry vertices projected from geo coodinates
+  Vector2 *vertices;
+  // Geometry bounding box
+  // @question: Can I return calculated values such as scale and offset?
+  BBox bbox;
+} Geometry;
 
 // lineAppendVertex appends vertex to the end of the line returns false if
 // line is null or line reached maximum size.
@@ -51,35 +56,33 @@ internal bool lineAppendVertex(Line *dst, Vector2 vec) {
     return false;
   }
 
-  if (dst->length >= MAX_POINTS) {
-    fprintf(stderr, "Cannot add more points - line reached maximum size\n");
-    return false;
-  }
-
-  dst->vertices[dst->length] = vec;
-  dst->length++;
+  arrpush(dst->vertices, vec);
 
   return true;
 }
 
 // lineVerticiesDraw draws every vertex of the line on the screen
-internal void lineVerticiesDraw(const Line *line, i32 radius, Color color) {
-  for (size_t i = 0; i < line->length; i++) {
-    DrawCircleV(line->vertices[i], radius, color);
+internal void lineVerticiesDraw(Vector2 *vertices, i32 radius, Color color,
+                                Vector2 offset, f64 scale) {
+  for (int i = 0; i < arrlen(vertices); i++) {
+    DrawCircleV(Vector2Add(Vector2Scale(vertices[i], scale), offset), radius,
+                color);
   }
 }
 
 // lineDraw draws the line on the screen
-internal void lineDraw(const Line *line, f32 thick, Color color) {
-  for (size_t i = 1; i < line->length; i++) {
-    DrawLineEx(line->vertices[i - 1], // start
-               line->vertices[i],     // end
-               thick,                 // thickness of the line
-               color);
+internal void lineDraw(Vector2 *vertices, f32 thick, Color color,
+                       Vector2 offset, f64 scale) {
+  for (i32 i = 1; i < arrlen(vertices); i++) {
+    DrawLineEx(
+        Vector2Add(Vector2Scale(vertices[i - 1], scale), offset), // start
+        Vector2Add(Vector2Scale(vertices[i], scale), offset),     // end
+        thick, // thickness of the line
+        color);
   }
 }
 
-internal void lineClear(Line *line) { line->length = 0; }
+internal void lineClear(Line *line) { arrsetlen(line->vertices, 0); }
 
 ////////////////////////////////////////////////////////////////////////////////
 /// MultiLine
@@ -87,11 +90,9 @@ internal void lineClear(Line *line) { line->length = 0; }
 
 typedef struct MultiLine {
   // Vertices of the lines
-  Vector2 vertices[MAX_POINTS];
+  Vector2 *vertices;
   // Lengths for the each line
-  size_t lengths[MAX_POINTS];
-  // Number of lines
-  size_t length;
+  int *lengths;
 } MultiLine;
 
 internal bool multilineAddLineVec(MultiLine *mline, const Vector2 *vertices,
@@ -101,8 +102,8 @@ internal bool multilineAddLineVec(MultiLine *mline, const Vector2 *vertices,
     return false;
   }
 
-  size_t offset = 0;
-  for (size_t i = 0; i < mline->length; i++) {
+  int offset = 0;
+  for (int i = 0; i < arrlen(mline->lengths); i++) {
     offset += mline->lengths[i];
   }
 
@@ -111,21 +112,21 @@ internal bool multilineAddLineVec(MultiLine *mline, const Vector2 *vertices,
     return false;
   }
 
+  arrinsn(mline->vertices, offset, length);
   memcpy(&mline->vertices[offset], vertices, sizeof(Vector2) * length);
-  mline->lengths[mline->length] = length;
-  mline->length++;
+  arrpush(mline->lengths, length);
 
   return true;
 }
 
 internal bool multilineAddLine(MultiLine *mline, Line *line) {
-  return multilineAddLineVec(mline, line->vertices, line->length);
+  return multilineAddLineVec(mline, line->vertices, arrlen(line->vertices));
 }
 
 internal void multilineDraw(const MultiLine *mline, f32 thick, Color color) {
-  size_t i, j;
-  size_t offset = 0;
-  for (i = 0; i < mline->length; i++) {
+  i32 i, j;
+  i32 offset = 0;
+  for (i = 0; i < arrlen(mline->lengths); i++) {
     for (j = 1; j < mline->lengths[i]; j++) {
       DrawLineEx(mline->vertices[offset + j - 1], // start
                  mline->vertices[offset + j],     // end
@@ -138,23 +139,24 @@ internal void multilineDraw(const MultiLine *mline, f32 thick, Color color) {
   }
 }
 
-internal void multilineClear(MultiLine *mline) { mline->length = 0; }
+internal void multilineClear(MultiLine *mline) {
+  arrsetlen(mline->vertices, 0);
+  arrsetlen(mline->lengths, 0);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Ramer–Douglas–Peucker algorithm
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef struct Indicies {
-  size_t v[MAX_POINTS];
-  size_t length;
+  size_t *v;
 } Indicies;
 
 internal void indiciesAppend(Indicies *dst, size_t index) {
-  dst->v[dst->length] = index;
-  dst->length++;
+  arrpush(dst->v, index);
 }
 
-internal void indiciesClear(Indicies *dst) { dst->length = 0; }
+internal void indiciesClear(Indicies *dst) { arrsetlen(dst->v, 0); }
 
 internal f32 perpendicularDistance(Vector2 p, Vector2 start, Vector2 end) {
   f32 a = p.x - start.x;
@@ -180,7 +182,8 @@ internal void ramerDouglasPeuker(Indicies *dst, Vector2 *vertices, size_t start,
   for (size_t i = start + 1; i < end; i++) {
     f32 distance =
         perpendicularDistance(vertices[i], vertices[start], vertices[end]);
-    assert(distance >= 0.0f);
+    assertf(distance >= 0.0f, "Invalid perpendicular distance %f < 0",
+            distance);
     if (distance > max_distance) {
       index = i;
       max_distance = distance;
@@ -205,13 +208,12 @@ internal void ramerDouglasPeuker(Indicies *dst, Vector2 *vertices, size_t start,
 
 internal void printAngles(const Line *line) {
   f32 angle;
-  for (size_t i = 1; i < line->length; i++) {
-    angle =
-        radsToDegs(Vector2LineAngle(line->vertices[i - 1], line->vertices[i]));
-    printf("Segment #%ld angle: %f\n", i, angle);
+  for (i32 i = 1; i < arrlen(line->vertices); i++) {
+    angle = radsToDegs(Vector2LineAngle(line->vertices[i - 1], line->vertices[i]));
+    printf("Segment #%d angle: %f\n", i, angle);
     angle = radsToDegs(Vector2LineAngle(Vector2Normalize(line->vertices[i - 1]),
                                         Vector2Normalize(line->vertices[i])));
-    printf("Segment #%ld angle(normalized): %f\n", i, angle);
+    printf("Segment #%d angle(normalized): %f\n", i, angle);
   }
 }
 
@@ -256,7 +258,7 @@ internal MultiLine approximateStraights(const Line *line) {
   Line approx;          // approximated line for the segment
   MultiLine mline = {}; // resulting multiline
 
-  if (line->length < 2) {
+  if (arrlen(line->vertices) < 2) {
     return mline;
   }
 
@@ -265,21 +267,21 @@ internal MultiLine approximateStraights(const Line *line) {
                                              line->vertices[1]  // end
                                              ));
 
-  for (size_t i = 2; i < line->length; i++) {
+  for (int i = 2; i < arrlen(line->vertices); i++) {
     current_angle = radsToDegs(Vector2LineAngle(line->vertices[i - 1], // start
                                                 line->vertices[i]      // end
                                                 ));
 
     diff = fabs(target_angle - current_angle);
     if (diff >= 85.0f) {
-      printf("Breaking approximation on the segment #%ld, angle %.2f, target "
+      printf("Breaking approximation on the segment #%d, angle %.2f, target "
              "%.2f, difference %.2f\n",
              i, current_angle, target_angle, diff);
       approx = approximateStraight(&line->vertices[start], i - start);
-      printf("Aproximated line with length %ld\n", approx.length);
+
+      printf("Aproximated line with length %ld\n", arrlen(approx.vertices));
       printf("Angle from the end of approximation %.2f\n",
-             Vector2LineAngle(approx.vertices[approx.length - 1],
-                              line->vertices[i]));
+             Vector2LineAngle(arrlast(approx.vertices), line->vertices[i]));
       multilineAddLine(&mline, &approx);
 
       target_angle = current_angle;
@@ -287,16 +289,19 @@ internal MultiLine approximateStraights(const Line *line) {
     }
   }
 
-  if (start < line->length - 1) {
-    approx = approximateStraight(&line->vertices[start], line->length - start);
-    printf("Aproximated line with length %ld\n", approx.length);
+  if ((int)start < arrlen(line->vertices) - 1) {
+    approx = approximateStraight(&line->vertices[start],
+                                 arrlen(line->vertices) - start);
+    printf("Aproximated line with length %ld\n", arrlen(approx.vertices));
     multilineAddLine(&mline, &approx);
   }
 
-  printf("Aproximated %ld lines\n", mline.length);
+  printf("Aproximated %ld lines\n", arrlen(mline.lengths));
 
   return mline;
 }
+
+// FIXME: allocate arrays for the global arrays
 
 // global line that will store points added but the user
 global Line drawn_line;
@@ -311,6 +316,86 @@ global Button button_run = {};
 global Button button_clear = {};
 
 global f32 epsilon = 0.0f;
+
+internal void assetFrame(Geometry *asset) {
+  ClearBackground(RAYWHITE);
+
+  Vector2 cursor = GetMousePosition();
+  bool is_over_run = buttonIsCollidedV(&button_run, cursor);
+  bool is_over_clear = buttonIsCollidedV(&button_clear, cursor);
+
+  if (IsKeyDown(KEY_I)) {
+    epsilon += 0.01;
+  } else if (IsKeyDown(KEY_N)) {
+    epsilon -= 0.01;
+  }
+
+  if (epsilon < 0.0f) {
+    epsilon = 0.0f;
+  }
+
+  if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+    if (is_over_run) {
+      indiciesClear(&simple_line);
+      ramerDouglasPeuker(&simple_line, asset->vertices,
+                         0,                       // start
+                         arrlen(asset->vertices), // end
+                         epsilon);
+
+      // approximation = approximateStraights(&drawn_line);
+    } else if (is_over_clear) {
+      // Reset
+      arrsetcap(asset->vertices, 0);
+      arrfree(asset->vertices);
+    }
+  }
+
+  buttonDraw(&button_run,
+             is_over_run ? LIGHTGRAY : RAYWHITE, // background
+             BLACK,                              // outline color
+             BLACK                               // font color
+  );
+
+  buttonDraw(&button_clear,
+             is_over_clear ? LIGHTGRAY : RAYWHITE, // background
+             BLACK,                                // outline color
+             BLACK                                 // font color
+  );
+
+  lineDraw(asset->vertices,                                // vertices
+           3,                                              // thick
+           arrlen(simple_line.v) == 0 ? BLACK : LIGHTGRAY, // color
+           Vector2Zero(),                                  // offset
+           1.0L                                            // scale
+  );
+  lineVerticiesDraw(asset->vertices,                                // vertices
+                    5,                                              // radius
+                    arrlen(simple_line.v) == 0 ? BLACK : LIGHTGRAY, // color
+                    Vector2Zero(),                                  // offset
+                    1.0L                                            // scale
+  );
+
+  // Drawing simplified line
+  for (int i = 1; i < arrlen(simple_line.v); i++) {
+    size_t a = simple_line.v[i - 1];
+    size_t b = simple_line.v[i];
+
+    DrawLineEx(drawn_line.vertices[a], // start
+               drawn_line.vertices[b], // end
+               3,                      // thickness of the line
+               BLACK);
+    DrawCircleV(drawn_line.vertices[a], 5, BLACK);
+    DrawCircleV(drawn_line.vertices[b], 5, BLACK);
+  }
+
+  multilineDraw(&approximation, 3, RED);
+
+  drawTextf(10,                                              // X
+            button_run.rect.y + button_run.rect.height + 10, // Y
+            20,                                              // font size
+            BLACK,                                           // color
+            "E: %.2f", epsilon);
+}
 
 internal void frame() {
   ClearBackground(RAYWHITE);
@@ -333,8 +418,8 @@ internal void frame() {
     if (is_over_run) {
       indiciesClear(&simple_line);
       ramerDouglasPeuker(&simple_line, drawn_line.vertices,
-                         0,                     // start
-                         drawn_line.length - 1, // end
+                         0,                               // start
+                         arrlen(drawn_line.vertices) - 1, // end
                          epsilon);
 
       // approximation = approximateStraights(&drawn_line);
@@ -359,12 +444,21 @@ internal void frame() {
              BLACK                                 // font color
   );
 
-  lineDraw(&drawn_line, 3, simple_line.length == 0 ? BLACK : LIGHTGRAY);
-  lineVerticiesDraw(&drawn_line, 5,
-                    simple_line.length == 0 ? BLACK : LIGHTGRAY);
+  lineDraw(drawn_line.vertices,                            // vertices
+           3,                                              // radius
+           arrlen(simple_line.v) == 0 ? BLACK : LIGHTGRAY, // color
+           Vector2Zero(),                                  // offset
+           1.0L                                            // scale
+  );
+  lineVerticiesDraw(drawn_line.vertices,                            // vertices
+                    5,                                              // thick
+                    arrlen(simple_line.v) == 0 ? BLACK : LIGHTGRAY, // color
+                    Vector2Zero(),                                  // offset
+                    1.0L                                            // scale
+  );
 
   // Drawing simplified line
-  for (size_t i = 1; i < simple_line.length; i++) {
+  for (int i = 1; i < arrlen(simple_line.v); i++) {
     size_t a = simple_line.v[i - 1];
     size_t b = simple_line.v[i];
 
@@ -389,7 +483,7 @@ internal void frame() {
 /// FILE
 ////////////////////////////////////////////////////////////////////////////////
 
-Vector2 parseVector(String str) {
+LngLat parseLngLat(String str) {
   char textbuf[128];
   // string format is (-5.727941989898682,41.27079391479492)
   str = stringSlice(str, 1, str.len - 2);
@@ -403,16 +497,20 @@ Vector2 parseVector(String str) {
   stringCopy(textbuf, stringSlice(str, comma_pos + 1, str.len - comma_pos - 1));
   f32 lat = atof(textbuf);
 
-  return projPseudoMercator((LngLat){
+  LngLat lnglat = {
       .lng = lng,
       .lat = lat,
-  });
+  };
+
+  return lnglat;
 }
 
 // loadFromFile attempts to load line from the file
-Vector2 *loadFromFile(char *filename, size_t *length) {
-  *length = 0;
-  Vector2 *result = NULL;
+Geometry loadFromFile(char *filename) {
+  Geometry result = {
+      .vertices = NULL,
+      .bbox = bboxZero(),
+  };
 
   FILE *file = fopen(filename, "r");
   if (NULL == file) {
@@ -433,21 +531,24 @@ Vector2 *loadFromFile(char *filename, size_t *length) {
   // NOTE(nk2ge5k): I am doing this after counting columns because I want
   // to exclude header from the count.
   size_t nlines = csvCountLines(content);
-  result = malloc(sizeof(Vector2) * nlines); // @leak
+  arrsetcap(result.vertices, nlines); // @leak
 
   String *line = malloc(sizeof(String) * ncolumns);
   // NOTE(nk2ge5k): Since I know which file I am parsing i wont attempt to
   // find where is my column.
-
-  *length = 0;
   for (size_t i = 0; !stringIsEmpty(content); i++) {
     size_t nvalues = csvGetValues(line, ncolumns, csvGetLine(&content), COMMA);
-    if (nvalues >= 5) { // 5th column contains the point
-      // NOTE(nk2ge5k): actually there is no actual need for this check
-      // because every row have the same number of columns.
-      result[*length] = parseVector(line[4]);
-      (*length)++;
+    // NOTE(nk2ge5k): actually there is no actual need for this check
+    // because every row must have the same number of columns.
+    assertf(nvalues >= 5, "Invalid CSV row #%lu", i + 1);
+
+    LngLat lnglat = parseLngLat(line[4]);
+    if (arrlen(result.vertices) == 0) {
+      result.bbox = bboxFromLngLat(lnglat);
+    } else {
+      result.bbox = bboxExpandLngLat(result.bbox, lnglat);
     }
+    arrpush(result.vertices, projPseudoMercator(lnglat));
   }
 
 cleanup:
@@ -458,14 +559,13 @@ cleanup:
 }
 
 i32 commandFixLine(i32 argc, char **argv) {
-  size_t asset_size;
-  Vector2 *asset;
+  Geometry asset = {};
 
   if (argc > 1) {
     // TODO(nk2ge5k): draw line to the screen.
     //  - I need to figure out how to calculate zoom and x, y offset for
     //    bounding box which is important for the drawing geo spatial data.
-    asset = loadFromFile(argv[1], &asset_size);
+    asset = loadFromFile(argv[1]);
   }
 
   const i32 screen_width = 800;
@@ -487,7 +587,11 @@ i32 commandFixLine(i32 argc, char **argv) {
 
   while (!WindowShouldClose()) {
     BeginDrawing();
-    frame();
+    if (arrlen(asset.vertices) == 0) {
+      frame();
+    } else {
+      assetFrame(&asset);
+    }
     EndDrawing();
   }
 

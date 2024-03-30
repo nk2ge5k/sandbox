@@ -1,4 +1,5 @@
 #ifndef DEBUG_H
+#define DEBUG_H
 
 #include <errno.h>
 #include <stdio.h>
@@ -39,7 +40,8 @@
 #define assertf(expression, format, ...)                                       \
   do {                                                                         \
     if (!(expression)) {                                                       \
-      errorf("Assertion (" #expression ") failed: " format, ##__VA_ARGS__);    \
+      errorf("Assertion (" #expression ") failed: " format "\n",               \
+             ##__VA_ARGS__);                                                   \
       abort();                                                                 \
     }                                                                          \
   } while (0)
