@@ -75,7 +75,7 @@ internal void frame() {
             "N: %llu", ring_length);
 
   if (isClosed()) {
-    Polygon polygon = createPolygon(ring, ring_length - 1);
+    Polygon polygon = createPolygon(ring, NULL, ring_length - 1);
     drawPolygon(&polygon, (Vector2){.x = 0, .y = 0}, 1, BLUE);
     freePolygon(&polygon);
   }

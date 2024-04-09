@@ -5,6 +5,7 @@
 #include <raylib.h>
 
 #include "types.h"
+#include "lnglat.h"
 
 // Polygon
 typedef struct Polygon {
@@ -14,12 +15,14 @@ typedef struct Polygon {
   // Indices of for vertices of triangles [A₁, B₁, C₁, A₂, B₂, C₂, ...]
   size_t *triangles;
   size_t triangles_size;
+
+  BBox* bbox;
 } Polygon;
 
 // createPolygon allocates new polygon and fills is with triangles.
 // NOTE(nk2ge5k): If polygon is not closed NULL will be returned.
 // NOTE(nk2ge5k): Veritices are reused, not copied.
-Polygon createPolygon(Vector2 *vertices, size_t size);
+Polygon createPolygon(Vector2 *vertices, BBox *bbox, size_t size);
 
 // freePolygon frees polygon
 void freePolygon(Polygon *polygon);

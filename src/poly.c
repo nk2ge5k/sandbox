@@ -12,12 +12,13 @@ internal void triangulate(Polygon *polgyon);
 /// API
 ////////////////////////////////////////////////////////////////////////////////
 
-Polygon createPolygon(Vector2 *vertices, size_t size) {
+Polygon createPolygon(Vector2 *vertices, BBox *bbox, size_t size) {
   Polygon polygon = {
       .vertices = vertices,
       .vertices_size = size,
       .triangles = NULL,
       .triangles_size = 0,
+      .bbox = bbox,
   };
 
   triangulate(&polygon);

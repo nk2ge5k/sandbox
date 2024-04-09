@@ -79,21 +79,30 @@ file_error: // Early errors after opening file
 
 // readRing reads ring of given length from array of geobuf coordinates.
 internal Vector2 *readRing(const i64 *coords, const size_t length,
-                           const f32 precision) {
-  Vector2 *ring = malloc(sizeof(Vector2) * length);
+                           const f32 precision, BBox *box) {
+
+  BBox bbox;
+  Vector2 *ring = malloc(sizeof(Vector2) * length); //@leak
 
   f32 lng, lat;
   size_t cur = 0;
   const size_t n_coords = length * 2;
 
   for (size_t i = 0; i < n_coords; i += 2, cur++) {
-    lng = coords[i] / precision;
-    lat = coords[i + 1] / precision;
-    ring[cur] = projPseudoMercator((LngLat){
-        .lng = lng,
-        .lat = lat,
-    });
+    LngLat lnglat = {
+        .lng = coords[i] / precision,
+        .lat = coords[i + 1] / precision,
+    };
+
+    if (i == 0) {
+      bbox = bboxFromLngLat(lnglat);
+    } else {
+      bbox = bboxExpandLngLat(bbox, lnglat);
+    }
+    ring[cur] = projPseudoMercator(lnglat);
   }
+
+  *box = bbox;
 
   return ring;
 }
@@ -101,11 +110,12 @@ internal Vector2 *readRing(const i64 *coords, const size_t length,
 internal void appendPolygon(Polygon **dst, const f32 precision,
                             const Grass__V1__Geometry *geometry) {
   assert(geometry->n_lengths >= 2);
+  BBox *bbox = malloc(sizeof(BBox)); //@leak
   // TODO(nk2ge5k): for now we do not handle hole just exteriors.
   size_t exterior_len = geometry->lengths[1];
-  Vector2 *ring = readRing(geometry->coords, exterior_len, precision);
+  Vector2 *ring = readRing(geometry->coords, exterior_len, precision, bbox);
   debugf("Polygon #%ld\n", NULL == dst ? 0 : arrlen(*dst));
-  arrput(*dst, createPolygon(ring, exterior_len));
+  arrput(*dst, createPolygon(ring, bbox, exterior_len));
 }
 
 internal void appendMultiPolygon(Polygon **dst, const f32 precision,
@@ -125,9 +135,10 @@ internal void appendMultiPolygon(Polygon **dst, const f32 precision,
     n_rings = *lengths;
     lengths++; // move to the the ring length
 
-    ring = readRing(coords, *lengths, precision);
+    BBox *bbox = NULL;
+    ring = readRing(coords, *lengths, precision, bbox);
     debugf("Polygon #%ld\n", NULL == dst ? 0 : arrlen(*dst));
-    arrput(*dst, createPolygon(ring, *lengths));
+    arrput(*dst, createPolygon(ring, bbox, *lengths));
     coords += (*lengths) * 2;
 
     n_rings--;
@@ -189,8 +200,7 @@ internal void appendFeature(Polygon **dst, const f32 precision,
 }
 
 internal void
-appendFeatureCollection(Polygon **dst, const f32 precision,
-                        const i32 name_key,
+appendFeatureCollection(Polygon **dst, const f32 precision, const i32 name_key,
                         const Grass__V1__FeatureCollection *collection) {
   for (size_t i = 0; i < collection->n_features; i++) {
     appendFeature(dst, precision, name_key, collection->features[i]);
@@ -231,6 +241,7 @@ internal Vector2 mapOffset(f64 zoom) {
 
   return offset;
 }
+
 internal LngLat lngLatForPosition(Vector2 pos, f64 zoom, Vector2 offset) {
   return projPseudoMercatorZoomedInverse(Vector2Subtract(pos, offset), zoom);
 }
@@ -274,6 +285,14 @@ i32 commandMap(i32 argc, char **argv) {
   zoom = pzoom =
       projPseudoMercatorZoomForSize(min_value(screen_width, screen_height));
   Vector2 offset = calcOffsetFor(lngLatZero(), zoom);
+
+  if (n_polygons == 1) {
+    // TODO(nk2ge5k): fit polygon bounding box into view
+    assertf(polygons[0].bbox != NULL, "Expected bounding box");
+    zoom = pzoom = projPseudoMercatorZoomForBBox(
+        polygons[0].bbox, min_value(screen_width, screen_height));
+    Vector2 offset = calcOffsetFor(bboxCenter(*polygons[0].bbox), zoom);
+  }
 
   while (!WindowShouldClose()) {
 
