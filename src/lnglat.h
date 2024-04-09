@@ -81,6 +81,8 @@ f64 projPseudoMercatorSize(f64 zoom);
 // pixels.
 f64 projPseudoMercatorZoomForSize(f64 size);
 
+f64 projPseudoMercatorZoomForBBox(BBox *bbox, f64 size);
+
 #if TEST_BUILD
 #include "testhelp.h"
 TEST(LNGLAT_H);

@@ -102,6 +102,13 @@ f64 projPseudoMercatorSize(f64 zoom) { return pow(2.0L, zoom) - 1; }
 
 f64 projPseudoMercatorZoomForSize(f64 size) { return log(size + 1) / M_LN2; }
 
+f64 projPseudoMercatorZoomForBBox(BBox *box, f64 size) {
+  f64 width = degsToRads(box->ne.lng - box->sw.lng);
+  f64 height = degsToRads(box->ne.lat - box->sw.lat);
+  f64 d = max_value(width, height);
+  return log(size +1) / logf(d);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 /// TEST
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,6 +162,7 @@ internal void testPseudoMercatorProjection() {
               inv.lng, inv.lat,                                          //
               src.lng, src.lat);
 }
+
 
 TEST(LNGLAT_H) {
   testMercatorProjection();
